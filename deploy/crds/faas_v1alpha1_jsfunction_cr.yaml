@@ -1,0 +1,7 @@
+apiVersion: faas.redhat.com/v1alpha1
+kind: JSFunction
+metadata:
+  name: example-jsfunction
+spec:
+  # Add fields here
+  inline: function() { }
