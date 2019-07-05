@@ -4,4 +4,5 @@ metadata:
   name: example-jsfunction
 spec:
   # Add fields here
-  inline: function() { }
+  size: 1
+  func: function () { console.log('example-jsfunction execution'); }
