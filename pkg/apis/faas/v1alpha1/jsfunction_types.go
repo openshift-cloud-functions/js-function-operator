@@ -10,7 +10,6 @@ import (
 // JSFunctionSpec defines the desired state of JSFunction
 // +k8s:openapi-gen=true
 type JSFunctionSpec struct {
-	Size int32  `json:"size"`
 	Func string `json:"func"`
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file

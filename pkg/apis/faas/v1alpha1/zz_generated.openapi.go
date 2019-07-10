@@ -68,12 +68,6 @@ func schema_pkg_apis_faas_v1alpha1_JSFunctionSpec(ref common.ReferenceCallback) 
 			SchemaProps: spec.SchemaProps{
 				Description: "JSFunctionSpec defines the desired state of JSFunction",
 				Properties: map[string]spec.Schema{
-					"size": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"integer"},
-							Format: "int32",
-						},
-					},
 					"func": {
 						SchemaProps: spec.SchemaProps{
 							Type:   []string{"string"},
@@ -81,7 +75,7 @@ func schema_pkg_apis_faas_v1alpha1_JSFunctionSpec(ref common.ReferenceCallback) 
 						},
 					},
 				},
-				Required: []string{"size", "func"},
+				Required: []string{"func"},
 			},
 		},
 		Dependencies: []string{},

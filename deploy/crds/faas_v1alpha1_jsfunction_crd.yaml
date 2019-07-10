@@ -31,11 +31,7 @@ spec:
           properties:
             func:
               type: string
-            size:
-              format: int32
-              type: integer
           required:
-          - size
           - func
           type: object
         status:
