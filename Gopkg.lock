@@ -371,17 +371,19 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:a56e224cd27ca39c1004feb024682b58517cfa077bf1a5dfedf6d1a573f8cab6"
+  digest = "1:75da113e70e669b32ba8e9f345cf620a4629663735f48e42dab575a743706346"
   name = "github.com/knative/serving"
   packages = [
     "pkg/apis/autoscaling",
     "pkg/apis/config",
     "pkg/apis/networking",
+    "pkg/apis/networking/v1alpha1",
     "pkg/apis/serving",
+    "pkg/apis/serving/v1alpha1",
     "pkg/apis/serving/v1beta1",
   ]
   pruneopts = "NT"
-  revision = "2b521cf6337ac1f5b8d3147b20eaed70f8dd4d6b"
+  revision = "c6b6a6f08d6c2d22f79ec1e49cab4b10b6d1e74c"
 
 [[projects]]
   branch = "master"
@@ -708,7 +710,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:55427bd7bb423525e817040f3657624cb43fd5741a2277995d582d4bd6d34543"
+  digest = "1:60f30dfb5baec03a0ddcde216f6589a268ec64a971edeebad9e8d5e1f9c41be5"
   name = "golang.org/x/tools"
   packages = [
     "go/ast/astutil",
@@ -725,7 +727,7 @@
     "internal/semver",
   ]
   pruneopts = "NT"
-  revision = "286818132824cc7a932bc972207f079caafd739f"
+  revision = "9c57229d8a1bf332c4c51b3c55f6d5b924f41f1e"
 
 [[projects]]
   digest = "1:b3fe055d94338b24d532229659c32b8ef4798f509172efbbb362d0f6d3494e3d"
@@ -1157,6 +1159,7 @@
   packages = [
     "apis",
     "apis/duck",
+    "apis/duck/v1alpha1",
     "apis/duck/v1beta1",
     "configmap",
     "kmeta",
@@ -1231,7 +1234,7 @@
   analyzer-version = 1
   input-imports = [
     "github.com/go-openapi/spec",
-    "github.com/knative/serving/pkg/apis/serving/v1beta1",
+    "github.com/knative/serving/pkg/apis/serving/v1alpha1",
     "github.com/operator-framework/operator-sdk/pkg/k8sutil",
     "github.com/operator-framework/operator-sdk/pkg/leader",
     "github.com/operator-framework/operator-sdk/pkg/log/zap",

@@ -1,7 +1,7 @@
 apiVersion: faas.redhat.com/v1alpha1
 kind: JSFunction
 metadata:
-  name: my-function2
+  name: test-func
 spec:
   # Add fields here
   func: function () { console.log('example-jsfunction execution'); }
