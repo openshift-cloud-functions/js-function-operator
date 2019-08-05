@@ -26,6 +26,10 @@ rules:
   verbs:
   - '*'
 - apiGroups:
+  - serving.knative.dev
+  resources:
+  - services
+- apiGroups:
   - monitoring.coreos.com
   resources:
   - servicemonitors

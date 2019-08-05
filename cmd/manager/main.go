@@ -7,6 +7,10 @@ import (
 	"os"
 	"runtime"
 
+	// Import knative types
+	knv1alpha1 "github.com/knative/serving/pkg/apis/serving/v1alpha1"
+	knv1beta1 "github.com/knative/serving/pkg/apis/serving/v1beta1"
+
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
@@ -100,6 +104,16 @@ func main() {
 	// Setup Scheme for all resources
 	if err := apis.AddToScheme(mgr.GetScheme()); err != nil {
 		log.Error(err, "")
+		os.Exit(1)
+	}
+
+	if err := knv1alpha1.AddToScheme(mgr.GetScheme()); err != nil {
+		log.Error(err, "Can't register the knative v1alpha1 scheme")
+		os.Exit(1)
+	}
+
+	if err := knv1beta1.AddToScheme(mgr.GetScheme()); err != nil {
+		log.Error(err, "Can't register the knative v1beta1 scheme")
 		os.Exit(1)
 	}
 

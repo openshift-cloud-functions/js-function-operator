@@ -152,7 +152,6 @@ func (r *ReconcileJSFunction) serviceForFunction(f *faasv1alpha1.JSFunction) *kn
 									Command: []string{"node", "-e", f.Spec.Func},
 									Ports: []corev1.ContainerPort{{
 										ContainerPort: 8080,
-										Name:          f.Name,
 									}},
 								}},
 							},

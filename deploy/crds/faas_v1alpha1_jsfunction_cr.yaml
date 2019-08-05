@@ -1,23 +1,24 @@
 apiVersion: faas.redhat.com/v1alpha1
 kind: JSFunction
 metadata:
-  name: test-func
+  name: testfunc
 spec:
   # Add fields here
-  func: | const http = require('http');
-const port = 8080;
+  func: | 
+    const http = require('http');
+    const port = 8080;
 
-const handler = (request, response) => {
-  console.log(request.url);
-  response.end('Hello Node.js Function!');
-};
+    const handler = (request, response) => {
+      console.log(request.url);
+      response.end('Hello Node.js Function!');
+    };
 
-const server = http.createServer(handler);
+    const server = http.createServer(handler);
 
-server.listen(port, (err) => {
-  if (err) {
-    return console.log('something bad happened', err);
-  }
+    server.listen(port, (err) => {
+      if (err) {
+        return console.log('something bad happened', err);
+      }
 
-  console.log(`server is listening on ${port}`)
-});
+      console.log(`server is listening on ${port}`)
+    });
