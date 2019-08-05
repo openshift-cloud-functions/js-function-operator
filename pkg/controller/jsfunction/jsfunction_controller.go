@@ -121,9 +121,8 @@ func (r *ReconcileJSFunction) Reconcile(request reconcile.Request) (reconcile.Re
 	// TODO update the JSFunction status with the pod names
 	// TODO update status nodes if necessary
 
-	// JSFunction and its Service already exist - don't requeue
-	reqLogger.Info("Skip reconcile: JSFunction Service already exists", "Service.Namespace", found.Namespace, "Service.Name", found.Name)
-	return reconcile.Result{}, nil
+	reqLogger.Info("JSFunction Service exists. Requeueing.", "Service.Namespace", found.Namespace, "Service.Name", found.Name)
+	return reconcile.Result{Requeue: true}, nil
 }
 
 func (r *ReconcileJSFunction) serviceForFunction(f *faasv1alpha1.JSFunction) *knv1alpha1.Service {
