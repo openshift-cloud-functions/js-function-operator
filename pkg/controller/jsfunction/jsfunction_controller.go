@@ -127,8 +127,29 @@ func (r *ReconcileJSFunction) Reconcile(request reconcile.Request) (reconcile.Re
 }
 
 func (r *ReconcileJSFunction) serviceForFunction(f *faasv1alpha1.JSFunction) *knv1alpha1.Service {
-	// replicas := f.Spec.Size
-	// labels := map[string]string{"app": "jsfunction", "jsfunction_cr": f.Name}
+	// Create a config map containing the user code
+	configMap := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: f.Name,
+		},
+		Data: map[string]string{"index.js": f.Spec.Func},
+	}
+	if err := controllerutil.SetControllerReference(f, configMap, r.scheme); err != nil {
+		log.Error(err, "Failed to set controller reference for function ConfigMap")
+	}
+
+	volumeName := strings.Join([]string{f.Name, "source"}, "-")
+	var _ = &corev1.Volume{
+		Name: volumeName,
+		VolumeSource: corev1.VolumeSource{
+			ConfigMap: &corev1.ConfigMapVolumeSource{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: configMap.Name,
+				},
+			},
+		},
+	}
+
 	service := &knv1alpha1.Service{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "serving.knative.dev/v1beta1",
@@ -148,12 +169,17 @@ func (r *ReconcileJSFunction) serviceForFunction(f *faasv1alpha1.JSFunction) *kn
 						RevisionSpec: knv1beta1.RevisionSpec{
 							PodSpec: corev1.PodSpec{
 								Containers: []corev1.Container{{
-									Image:   "node:12-alpine",
-									Name:    strings.Join([]string{"node-12", f.Name}, "-"),
-									Command: []string{"node", "-e", f.Spec.Func},
+									Image: "quay.io/lanceball/js-runtime",
+									Name:  strings.Join([]string{"nodejs", f.Name}, "-"),
 									Ports: []corev1.ContainerPort{{
 										ContainerPort: 8080,
 									}},
+									VolumeMounts: []corev1.VolumeMount{
+										corev1.VolumeMount{
+											Name:      volumeName,
+											MountPath: "/home/node/usr",
+										},
+									},
 								}},
 							},
 						},
@@ -166,7 +192,7 @@ func (r *ReconcileJSFunction) serviceForFunction(f *faasv1alpha1.JSFunction) *kn
 
 	// Set JSFunction instance as the owner and controller
 	if err := controllerutil.SetControllerReference(f, service, r.scheme); err != nil {
-		log.Error(err, "Failed to set controller reference for function deployment")
+		log.Error(err, "Failed to set controller reference for function Service")
 	}
 
 	return service
