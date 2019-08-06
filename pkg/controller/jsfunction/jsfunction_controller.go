@@ -2,6 +2,7 @@ package jsfunction
 
 import (
 	"context"
+	"strings"
 
 	knv1alpha1 "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 	knv1beta1 "github.com/knative/serving/pkg/apis/serving/v1beta1"
@@ -121,8 +122,8 @@ func (r *ReconcileJSFunction) Reconcile(request reconcile.Request) (reconcile.Re
 	// TODO update the JSFunction status with the pod names
 	// TODO update status nodes if necessary
 
-	reqLogger.Info("JSFunction Service exists. Requeueing.", "Service.Namespace", found.Namespace, "Service.Name", found.Name)
-	return reconcile.Result{Requeue: true}, nil
+	reqLogger.Info("JSFunction Service exists.", "Service.Namespace", found.Namespace, "Service.Name", found.Name)
+	return reconcile.Result{}, nil
 }
 
 func (r *ReconcileJSFunction) serviceForFunction(f *faasv1alpha1.JSFunction) *knv1alpha1.Service {
@@ -148,7 +149,7 @@ func (r *ReconcileJSFunction) serviceForFunction(f *faasv1alpha1.JSFunction) *kn
 							PodSpec: corev1.PodSpec{
 								Containers: []corev1.Container{{
 									Image:   "node:12-alpine",
-									Name:    "node-12",
+									Name:    strings.Join([]string{"node-12", f.Name}, "-"),
 									Command: []string{"node", "-e", f.Spec.Func},
 									Ports: []corev1.ContainerPort{{
 										ContainerPort: 8080,
