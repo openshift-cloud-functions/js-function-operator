@@ -1,7 +1,7 @@
 package apis
 
 import (
-	"github.com/lance/js-function-operator/pkg/apis/faas/v1alpha1"
+	"github.com/openshift-cloud-functions/js-function-operator/pkg/apis/faas/v1alpha1"
 )
 
 func init() {
