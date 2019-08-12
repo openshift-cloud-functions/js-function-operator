@@ -2,12 +2,12 @@ package jsfunction
 
 import (
 	"context"
-	"strings"
+	"fmt"
 
 	knv1alpha1 "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 	knv1beta1 "github.com/knative/serving/pkg/apis/serving/v1beta1"
 
-	faasv1alpha1 "github.com/lance/js-function-operator/pkg/apis/faas/v1alpha1"
+	faasv1alpha1 "github.com/openshift-cloud-functions/js-function-operator/pkg/apis/faas/v1alpha1"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -104,7 +104,24 @@ func (r *ReconcileJSFunction) Reconcile(request reconcile.Request) (reconcile.Re
 	err = r.client.Get(context.TODO(), types.NamespacedName{Name: function.Name, Namespace: function.Namespace}, found)
 	if err != nil && errors.IsNotFound(err) {
 		// No service for this function exists. Create a new one
-		service := r.serviceForFunction(function)
+
+		// Create configmap first
+		configMap, err := r.configMapWithFunction(function)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
+		err = r.client.Create(context.TODO(), configMap)
+		if err != nil {
+			reqLogger.Error(err, "Failed to create new ConfigMap holding function.", "Service.Namespace", configMap.Namespace, "ConfigMap.Name",  configMap.Name)
+			return reconcile.Result{}, err
+		}
+
+		// Create service, mounting the config map
+		service, err := r.serviceForFunction(function, configMap.Name)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
+
 		reqLogger.Info("Creating a new knative Service", "Service.Namespace", service.Namespace, "Service.Name", service.Name)
 		err = r.client.Create(context.TODO(), service)
 		if err != nil {
@@ -126,35 +143,23 @@ func (r *ReconcileJSFunction) Reconcile(request reconcile.Request) (reconcile.Re
 	return reconcile.Result{}, nil
 }
 
-func (r *ReconcileJSFunction) serviceForFunction(f *faasv1alpha1.JSFunction) *knv1alpha1.Service {
+func (r *ReconcileJSFunction) configMapWithFunction(f *faasv1alpha1.JSFunction) (*corev1.ConfigMap, error) {
 	// Create a config map containing the user code
 	configMap := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: f.Name,
+			Namespace: f.Namespace,
 		},
 		Data: map[string]string{"index.js": f.Spec.Func},
 	}
 	if err := controllerutil.SetControllerReference(f, configMap, r.scheme); err != nil {
-		log.Error(err, "Failed to set controller reference for function ConfigMap")
+		return nil, err
 	}
+	return configMap, nil
+}
 
-	volumeName := strings.Join([]string{f.Name, "source"}, "-")
-	var _ = &corev1.Volume{
-		Name: volumeName,
-		VolumeSource: corev1.VolumeSource{
-			ConfigMap: &corev1.ConfigMapVolumeSource{
-				LocalObjectReference: corev1.LocalObjectReference{
-					Name: configMap.Name,
-				},
-			},
-		},
-	}
-
+func (r *ReconcileJSFunction) serviceForFunction(f *faasv1alpha1.JSFunction, configMapName string) (*knv1alpha1.Service, error) {
 	service := &knv1alpha1.Service{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "serving.knative.dev/v1beta1",
-			Kind:       "Service",
-		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      f.Name,
 			Namespace: f.Namespace,
@@ -167,21 +172,7 @@ func (r *ReconcileJSFunction) serviceForFunction(f *faasv1alpha1.JSFunction) *kn
 					},
 					Spec: knv1alpha1.RevisionSpec{
 						RevisionSpec: knv1beta1.RevisionSpec{
-							PodSpec: corev1.PodSpec{
-								Containers: []corev1.Container{{
-									Image: "quay.io/lanceball/js-runtime",
-									Name:  strings.Join([]string{"nodejs", f.Name}, "-"),
-									Ports: []corev1.ContainerPort{{
-										ContainerPort: 8080,
-									}},
-									VolumeMounts: []corev1.VolumeMount{
-										corev1.VolumeMount{
-											Name:      volumeName,
-											MountPath: "/home/node/usr",
-										},
-									},
-								}},
-							},
+							PodSpec: createPodSpec(f.Name, configMapName),
 						},
 					},
 				},
@@ -192,8 +183,43 @@ func (r *ReconcileJSFunction) serviceForFunction(f *faasv1alpha1.JSFunction) *kn
 
 	// Set JSFunction instance as the owner and controller
 	if err := controllerutil.SetControllerReference(f, service, r.scheme); err != nil {
-		log.Error(err, "Failed to set controller reference for function Service")
+		return nil, err
 	}
 
-	return service
+	return service, nil
+}
+
+func createPodSpec(functionName, configMapName string) corev1.PodSpec {
+	volumeName := fmt.Sprintf("%s-source", functionName)
+	return corev1.PodSpec{
+		Containers: []corev1.Container{{
+			Image: "docker.io/rhuss/js-runtime",
+			Name:  fmt.Sprintf("nodejs-%s", functionName),
+			Ports: []corev1.ContainerPort{{
+				ContainerPort: 8181,
+			}},
+			VolumeMounts: []corev1.VolumeMount{
+				{
+					Name:      volumeName,
+					MountPath: "/home/node/usr",
+				},
+			},
+		}},
+		Volumes: []corev1.Volume{
+			createConfigMapVolume(volumeName, configMapName),
+		},
+	}
+}
+
+func createConfigMapVolume(volumeName, configMapName string) corev1.Volume {
+	return corev1.Volume {
+		Name: volumeName,
+		VolumeSource: corev1.VolumeSource {
+			ConfigMap: &corev1.ConfigMapVolumeSource{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: configMapName,
+				},
+			},
+		},
+	}
 }
