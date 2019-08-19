@@ -31,8 +31,11 @@ spec:
           properties:
             func:
               type: string
+            package:
+              type: string
           required:
           - func
+          - package
           type: object
         status:
           properties:

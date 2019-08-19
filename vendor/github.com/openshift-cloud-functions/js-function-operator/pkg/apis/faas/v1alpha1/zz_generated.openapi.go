@@ -74,14 +74,8 @@ func schema_pkg_apis_faas_v1alpha1_JSFunctionSpec(ref common.ReferenceCallback) 
 							Format: "",
 						},
 					},
-					"package": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
-						},
-					},
 				},
-				Required: []string{"func", "package"},
+				Required: []string{"func"},
 			},
 		},
 		Dependencies: []string{},

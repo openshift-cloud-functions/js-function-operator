@@ -4,21 +4,22 @@ metadata:
   name: testfunc
 spec:
   # Add fields here
-  func: | 
-    const http = require('http');
-    const port = 8181;
-
-    const handler = (request, response) => {
-      console.log(request.url);
-      response.end('Hello Node.js Function!');
-    };
-
-    const server = http.createServer(handler);
-
-    server.listen(port, (err) => {
-      if (err) {
-        return console.log('something bad happened', err);
+  package: |
+    {
+      "name": "faas-hello-world",
+      "version": "0.0.1",
+      "description": "A sample FaaS function",
+      "author": "lball@redhat.com",
+      "license": "MIT",
+      "dependencies": {
+        "is-number": "^7.0.0"
       }
+    }
+  func: | 
+    const isNumber = require('is-number')
 
-      console.log(`server is listening on ${port}`)
-    });
+    module.exports = context => {
+      const ret = 'This is the test function for Node.js FaaS. Success.';
+      if (isNumber(ret)) throw new Error('Something is wrong with modules');
+      return ret;
+    };
