@@ -81,7 +81,7 @@ type ReconcileJSFunction struct {
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
 func (r *ReconcileJSFunction) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	reqLogger := log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
-	reqLogger.Info("Reconciling JSFunction - watch out!")
+	reqLogger.Info("Reconciling JSFunction")
 
 	// Fetch the JSFunction instance
 	function := &faasv1alpha1.JSFunction{}
@@ -105,15 +105,14 @@ func (r *ReconcileJSFunction) Reconcile(request reconcile.Request) (reconcile.Re
 	if err != nil && errors.IsNotFound(err) {
 		// No service for this function exists. Create a new one
 
-		// Create configmap for function code and package.json
-		reqLogger.Info("Creating new ConfigMap with", function.Name, function.Package)
+		// Create configmap first
 		configMap, err := r.configMapWithFunction(function)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
 		err = r.client.Create(context.TODO(), configMap)
 		if err != nil {
-			reqLogger.Error(err, "Failed to create new ConfigMap holding function.", "Service.Namespace", configMap.Namespace, "ConfigMap.Name", configMap.Name)
+			reqLogger.Error(err, "Failed to create new ConfigMap holding function.", "Service.Namespace", configMap.Namespace, "ConfigMap.Name",  configMap.Name)
 			return reconcile.Result{}, err
 		}
 
@@ -137,21 +136,21 @@ func (r *ReconcileJSFunction) Reconcile(request reconcile.Request) (reconcile.Re
 		return reconcile.Result{}, err
 	}
 
+	// TODO update the JSFunction status with the pod names
+	// TODO update status nodes if necessary
+
 	reqLogger.Info("JSFunction Service exists.", "Service.Namespace", found.Namespace, "Service.Name", found.Name)
 	return reconcile.Result{}, nil
 }
 
 func (r *ReconcileJSFunction) configMapWithFunction(f *faasv1alpha1.JSFunction) (*corev1.ConfigMap, error) {
-	log.Info("Writing function", f.Spec.Func)
-	log.Info("Writing package", f.Spec.Package)
-
 	// Create a config map containing the user code
 	configMap := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      f.Name,
+			Name: f.Name,
 			Namespace: f.Namespace,
 		},
-		Data: map[string]string{"index.js": f.Spec.Func, "package.json": f.Spec.Package},
+		Data: map[string]string{"index.js": f.Spec.Func},
 	}
 	if err := controllerutil.SetControllerReference(f, configMap, r.scheme); err != nil {
 		return nil, err
@@ -194,7 +193,7 @@ func createPodSpec(functionName, configMapName string) corev1.PodSpec {
 	volumeName := fmt.Sprintf("%s-source", functionName)
 	return corev1.PodSpec{
 		Containers: []corev1.Container{{
-			Image: "docker.io/lanceball/js-runtime",
+			Image: "docker.io/rhuss/js-runtime",
 			Name:  fmt.Sprintf("nodejs-%s", functionName),
 			Ports: []corev1.ContainerPort{{
 				ContainerPort: 8181,
@@ -213,9 +212,9 @@ func createPodSpec(functionName, configMapName string) corev1.PodSpec {
 }
 
 func createConfigMapVolume(volumeName, configMapName string) corev1.Volume {
-	return corev1.Volume{
+	return corev1.Volume {
 		Name: volumeName,
-		VolumeSource: corev1.VolumeSource{
+		VolumeSource: corev1.VolumeSource {
 			ConfigMap: &corev1.ConfigMapVolumeSource{
 				LocalObjectReference: corev1.LocalObjectReference{
 					Name: configMapName,

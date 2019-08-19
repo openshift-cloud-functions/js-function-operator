@@ -438,6 +438,19 @@
   version = "1.0.1"
 
 [[projects]]
+  branch = "master"
+  digest = "1:74be88a302071e5224cb897b501a0e29082290eeceea81d1d6cc6cfe4eae42c1"
+  name = "github.com/openshift-cloud-functions/js-function-operator"
+  packages = [
+    "pkg/apis",
+    "pkg/apis/faas/v1alpha1",
+    "pkg/controller",
+    "pkg/controller/jsfunction",
+  ]
+  pruneopts = "NT"
+  revision = "79897c2ae2d8483b9f5ef87189bd2c5ce896c849"
+
+[[projects]]
   digest = "1:fe3c97fb1956829a81d7b8221b4710c40d6dae2c6c3b4d222db5b7f96c975d99"
   name = "github.com/operator-framework/operator-sdk"
   packages = [
@@ -1236,6 +1249,10 @@
     "github.com/go-openapi/spec",
     "github.com/knative/serving/pkg/apis/serving/v1alpha1",
     "github.com/knative/serving/pkg/apis/serving/v1beta1",
+    "github.com/openshift-cloud-functions/js-function-operator/pkg/apis",
+    "github.com/openshift-cloud-functions/js-function-operator/pkg/apis/faas/v1alpha1",
+    "github.com/openshift-cloud-functions/js-function-operator/pkg/controller",
+    "github.com/openshift-cloud-functions/js-function-operator/pkg/controller/jsfunction",
     "github.com/operator-framework/operator-sdk/pkg/k8sutil",
     "github.com/operator-framework/operator-sdk/pkg/leader",
     "github.com/operator-framework/operator-sdk/pkg/log/zap",

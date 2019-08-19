@@ -29,6 +29,8 @@ rules:
   - serving.knative.dev
   resources:
   - services
+  verbs:
+  - '*'
 - apiGroups:
   - monitoring.coreos.com
   resources:
