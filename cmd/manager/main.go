@@ -12,6 +12,9 @@ import (
 	knv1alpha1 "knative.dev/serving/pkg/apis/serving/v1alpha1"
 	knv1beta1 "knative.dev/serving/pkg/apis/serving/v1beta1"
 
+	// Import tekton types
+	pipeline "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
+
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
@@ -120,6 +123,11 @@ func main() {
 
 	if err := kneventing.AddToScheme(mgr.GetScheme()); err != nil {
 		log.Error(err, "Can't register the knative eventing scheme")
+		os.Exit(1)
+	}
+
+	if err := pipeline.AddToScheme(mgr.GetScheme()); err != nil {
+		log.Error(err, "Can't register the tekton pipeline scheme")
 		os.Exit(1)
 	}
 

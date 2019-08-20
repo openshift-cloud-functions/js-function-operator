@@ -32,6 +32,12 @@ rules:
   verbs:
   - '*'
 - apiGroups:
+  - tekton.dev
+  resources:
+  - tasks
+  verbs:
+  - '*'
+- apiGroups:
   - monitoring.coreos.com
   resources:
   - servicemonitors

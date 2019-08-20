@@ -1,0 +1,69 @@
+apiVersion: tekton.dev/v1alpha1
+kind: Task
+metadata:
+  name: js-function-build-runtime
+spec:
+  inputs:
+    params:
+    - name: FUNCTION_NAME
+      description: The name of the function being built
+      default: 'user-function'
+    - name: TLSVERIFY
+      description: Verify the TLS on the registry endpoint (default false)
+      default: 'false'
+  outputs:
+    resources:
+    - name: image
+      type: image
+  steps:
+  - name: copy-source
+    image: docker.io/alpine
+    command: ['cp', '-fpv', '/fn-source/index.js', '/fn-source/package.json', '/home/node/usr/']
+    volumeMounts:
+    - name: sourcedir
+      mountPath: /fn-source
+    - name: gen-source
+      mountPath: /home/node/usr
+    securityContext:
+      privileged: true
+  - name: generate
+    image: quay.io/openshift-pipeline/s2i
+    workingdir:  '/home/node/usr'
+    command: ['s2i', 'build', '.', 'quay.io/lanceball/js-runtime', '--as-dockerfile', '/home/node/build/Dockerfile.gen']
+    volumeMounts:
+    - name: gen-source
+      mountPath: /home/node/usr
+    - name: buildpath
+      mountPath: /home/node/build
+    securityContext:
+      privileged: true
+  - name: build
+    image: quay.io/buildah/stable
+    workingdir: /home/node/build
+    command: ['buildah', 'bud', '--tls-verify=${inputs.params.TLSVERIFY}', '--layers', '-f', '/Dockerfile.gen', '-t', '${outputs.resources.image.url}', '.']
+    volumeMounts:
+    - name: varlibcontainers
+      mountPath: /var/lib/containers
+    - name: buildpath
+      mountPath: /home/node/build
+    securityContext:
+      privileged: true
+  - name: push
+    image: quay.io/buildah/stable
+    command: ['buildah', 'push', '--tls-verify=${inputs.params.TLSVERIFY}', '${outputs.resources.image.url}', 'docker://${outputs.resources.image.url}']
+    volumeMounts:
+    - name: varlibcontainers
+      mountPath: /var/lib/containers
+    securityContext:
+      privileged: true
+
+  volumes:
+  - name: varlibcontainers
+    emptyDir: {}
+  - name: gen-source
+    emptyDir: {}
+  - name: buildpath
+    emptyDir: {}
+  - name: sourcedir
+    configMap:
+      name: ${inputs.params.FUNCTION_NAME}
