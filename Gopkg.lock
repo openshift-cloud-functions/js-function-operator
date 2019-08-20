@@ -559,6 +559,20 @@
   version = "v1.0.3"
 
 [[projects]]
+  digest = "1:0b30d1cfbc7b4a319c1dbfdc81388257ef36e044b583450798511d1a3d8f9330"
+  name = "github.com/tektoncd/pipeline"
+  packages = [
+    "pkg/apis/config",
+    "pkg/apis/pipeline",
+    "pkg/apis/pipeline/v1alpha1",
+    "pkg/list",
+    "pkg/names",
+  ]
+  pruneopts = "NT"
+  revision = "c105b6835a899ad1cccadc3556c8a260e812d2cf"
+  version = "v0.6.0"
+
+[[projects]]
   digest = "1:8bcb2616463bc981681c4b26f2aa817be8167682b76fb7884ec3fafdc9f82372"
   name = "go.opencensus.io"
   packages = [
@@ -728,6 +742,17 @@
   ]
   pruneopts = "NT"
   revision = "9c57229d8a1bf332c4c51b3c55f6d5b924f41f1e"
+
+[[projects]]
+  branch = "master"
+  digest = "1:da4baf48e12c5766130e8ec8ae5058cb3b5e8b533606c75340f7fb59604a4018"
+  name = "golang.org/x/xerrors"
+  packages = [
+    ".",
+    "internal",
+  ]
+  pruneopts = "NT"
+  revision = "a985d3407aa71f30cf86696ee0a2f409709f22e1"
 
 [[projects]]
   digest = "1:b3fe055d94338b24d532229659c32b8ef4798f509172efbbb362d0f6d3494e3d"
@@ -915,6 +940,7 @@
     "pkg/util/mergepatch",
     "pkg/util/naming",
     "pkg/util/net",
+    "pkg/util/rand",
     "pkg/util/runtime",
     "pkg/util/sets",
     "pkg/util/strategicpatch",
@@ -1243,6 +1269,7 @@
     "github.com/operator-framework/operator-sdk/pkg/restmapper",
     "github.com/operator-framework/operator-sdk/version",
     "github.com/spf13/pflag",
+    "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1",
     "k8s.io/api/core/v1",
     "k8s.io/apimachinery/pkg/api/errors",
     "k8s.io/apimachinery/pkg/apis/meta/v1",
