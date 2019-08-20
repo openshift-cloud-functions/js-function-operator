@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	pipeline "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
 	kneventing "knative.dev/eventing/pkg/apis/eventing/v1alpha1"
 	knv1alpha1 "knative.dev/serving/pkg/apis/serving/v1alpha1"
 	knv1beta1 "knative.dev/serving/pkg/apis/serving/v1beta1"
@@ -134,8 +135,19 @@ func (r *ReconcileJSFunction) Reconcile(request reconcile.Request) (reconcile.Re
 			return reconcile.Result{}, err
 		}
 
+		reqLogger.Info("Creating TaskRun for function build.")
+		build, err := r.buildForFunction(function)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
+		err = r.client.Create(context.TODO(), build)
+		if err != nil {
+			reqLogger.Error(err, "Failed to create TaskRun for function build.", "Service.Namespace", build.Namespace, "ConfigMap.Name", build.Name)
+			return reconcile.Result{}, err
+		}
+
 		// Create service, mounting the config map
-		service, err := r.serviceForFunction(function, configMap.Name)
+		service, err := r.serviceForFunction(function, configMap.Name, runtimeImageForFunction(function))
 		if err != nil {
 			return reconcile.Result{}, err
 		}
@@ -216,6 +228,49 @@ func (r *ReconcileJSFunction) Reconcile(request reconcile.Request) (reconcile.Re
 	return reconcile.Result{}, nil
 }
 
+func (r *ReconcileJSFunction) buildForFunction(f *faasv1alpha1.JSFunction) (*pipeline.TaskRun, error) {
+	imageName := runtimeImageForFunction(f)
+	taskRun := &pipeline.TaskRun{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      fmt.Sprintf("%s-build", f.Name),
+			Namespace: f.Namespace,
+		},
+		Spec: pipeline.TaskRunSpec{
+			ServiceAccount: "js-function-operator",
+			TaskRef: &pipeline.TaskRef{
+				Name: "js-function-build-runtime",
+			},
+			Inputs: pipeline.TaskRunInputs{
+				Params: []pipeline.Param{{
+					Name: "FUNCTION_NAME",
+					Value: pipeline.ArrayOrString{
+						Type:      "string",
+						StringVal: f.Name,
+					},
+				}},
+			},
+			Outputs: pipeline.TaskRunOutputs{
+				Resources: []pipeline.TaskResourceBinding{
+					{
+						Name: "image",
+						ResourceSpec: &pipeline.PipelineResourceSpec{
+							Type: "image",
+							Params: []pipeline.ResourceParam{{
+								Name:  "url",
+								Value: imageName,
+							}},
+						},
+					},
+				},
+			},
+		},
+	}
+	if err := controllerutil.SetControllerReference(f, taskRun, r.scheme); err != nil {
+		return nil, err
+	}
+	return taskRun, nil
+}
+
 func (r *ReconcileJSFunction) configMapWithFunction(f *faasv1alpha1.JSFunction) (*corev1.ConfigMap, error) {
 
 	data := map[string]string{"index.js": f.Spec.Func}
@@ -238,7 +293,7 @@ func (r *ReconcileJSFunction) configMapWithFunction(f *faasv1alpha1.JSFunction) 
 	return configMap, nil
 }
 
-func (r *ReconcileJSFunction) serviceForFunction(f *faasv1alpha1.JSFunction, configMapName string) (*knv1alpha1.Service, error) {
+func (r *ReconcileJSFunction) serviceForFunction(f *faasv1alpha1.JSFunction, configMapName string, imageName string) (*knv1alpha1.Service, error) {
 	service := &knv1alpha1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      f.Name,
@@ -252,7 +307,7 @@ func (r *ReconcileJSFunction) serviceForFunction(f *faasv1alpha1.JSFunction, con
 					},
 					Spec: knv1alpha1.RevisionSpec{
 						RevisionSpec: knv1beta1.RevisionSpec{
-							PodSpec: createPodSpec(f.Name, configMapName),
+							PodSpec: createPodSpec(f.Name, configMapName, imageName),
 						},
 					},
 				},
@@ -269,11 +324,11 @@ func (r *ReconcileJSFunction) serviceForFunction(f *faasv1alpha1.JSFunction, con
 	return service, nil
 }
 
-func createPodSpec(functionName, configMapName string) corev1.PodSpec {
+func createPodSpec(functionName, configMapName string, imageName string) corev1.PodSpec {
 	volumeName := fmt.Sprintf("%s-source", functionName)
 	return corev1.PodSpec{
 		Containers: []corev1.Container{{
-			Image: "docker.io/zroubalik/js-runtime",
+			Image: imageName,
 			Name:  fmt.Sprintf("nodejs-%s", functionName),
 			Ports: []corev1.ContainerPort{{
 				ContainerPort: 8080,
@@ -356,4 +411,8 @@ func (r *ReconcileJSFunction) subscriptionForFunction(f *faasv1alpha1.JSFunction
 	}
 
 	return subscription, nil
+}
+
+func runtimeImageForFunction(f *faasv1alpha1.JSFunction) string {
+	return fmt.Sprintf("image-registry.openshift-image-registry.svc:5000/%s/%s-runtime", f.Namespace, f.Name)
 }

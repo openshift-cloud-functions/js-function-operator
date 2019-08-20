@@ -16,7 +16,7 @@ spec:
       containers:
         - name: js-function-operator
           # Replace this with the built image name
-          image: docker.io/lanceball/js-function-operator:v0.0.2
+          image: quay.io/lanceball/js-function-operator:v0.0.2
           command:
           - js-function-operator
           imagePullPolicy: Always
