@@ -11,6 +11,10 @@ required = [
 ]
 
 [[override]]
+  name = "github.com/openshift-cloud-functions/js-function-operator"
+  branch = "5-add-package-json"
+
+[[override]]
   name = "github.com/knative/serving"
   branch = "master"
   
