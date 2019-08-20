@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	knv1alpha1 "github.com/knative/serving/pkg/apis/serving/v1alpha1"
-	knv1beta1 "github.com/knative/serving/pkg/apis/serving/v1beta1"
+	knv1alpha1 "knative.dev/serving/pkg/apis/serving/v1alpha1"
+	knv1beta1 "knative.dev/serving/pkg/apis/serving/v1beta1"
 
 	faasv1alpha1 "github.com/openshift-cloud-functions/js-function-operator/pkg/apis/faas/v1alpha1"
 
@@ -113,7 +113,7 @@ func (r *ReconcileJSFunction) Reconcile(request reconcile.Request) (reconcile.Re
 		}
 		err = r.client.Create(context.TODO(), configMap)
 		if err != nil {
-			reqLogger.Error(err, "Failed to create new ConfigMap holding function.", "Service.Namespace", configMap.Namespace, "ConfigMap.Name", configMap.Name)
+			reqLogger.Error(err, "Failed to create new ConfigMap holding function.", "ConfigMap.Namespace", configMap.Namespace, "ConfigMap.Name", configMap.Name)
 			return reconcile.Result{}, err
 		}
 

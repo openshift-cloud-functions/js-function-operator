@@ -8,8 +8,8 @@ import (
 	"runtime"
 
 	// Import knative types
-	knv1alpha1 "github.com/knative/serving/pkg/apis/serving/v1alpha1"
-	knv1beta1 "github.com/knative/serving/pkg/apis/serving/v1beta1"
+	knv1alpha1 "knative.dev/serving/pkg/apis/serving/v1alpha1"
+	knv1beta1 "knative.dev/serving/pkg/apis/serving/v1beta1"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
