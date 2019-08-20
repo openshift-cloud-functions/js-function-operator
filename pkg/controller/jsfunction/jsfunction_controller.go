@@ -81,7 +81,7 @@ type ReconcileJSFunction struct {
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
 func (r *ReconcileJSFunction) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	reqLogger := log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
-	reqLogger.Info("Reconciling JSFunction - watch out!")
+	reqLogger.Info("Reconciling JSFunction.")
 
 	// Fetch the JSFunction instance
 	function := &faasv1alpha1.JSFunction{}
@@ -106,7 +106,7 @@ func (r *ReconcileJSFunction) Reconcile(request reconcile.Request) (reconcile.Re
 		// No service for this function exists. Create a new one
 
 		// Create configmap for function code and package.json
-		reqLogger.Info("Creating new ConfigMap with", function.Name, function.Package)
+		reqLogger.Info("Creating new ConfigMap.")
 		configMap, err := r.configMapWithFunction(function)
 		if err != nil {
 			return reconcile.Result{}, err
@@ -142,9 +142,6 @@ func (r *ReconcileJSFunction) Reconcile(request reconcile.Request) (reconcile.Re
 }
 
 func (r *ReconcileJSFunction) configMapWithFunction(f *faasv1alpha1.JSFunction) (*corev1.ConfigMap, error) {
-	log.Info("Writing function", f.Spec.Func)
-	log.Info("Writing package", f.Spec.Package)
-
 	// Create a config map containing the user code
 	configMap := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{

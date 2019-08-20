@@ -13,9 +13,9 @@ import (
 
 func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenAPIDefinition {
 	return map[string]common.OpenAPIDefinition{
-		"github.com/lance/js-function-operator/pkg/apis/faas/v1alpha1.JSFunction":       schema_pkg_apis_faas_v1alpha1_JSFunction(ref),
-		"github.com/lance/js-function-operator/pkg/apis/faas/v1alpha1.JSFunctionSpec":   schema_pkg_apis_faas_v1alpha1_JSFunctionSpec(ref),
-		"github.com/lance/js-function-operator/pkg/apis/faas/v1alpha1.JSFunctionStatus": schema_pkg_apis_faas_v1alpha1_JSFunctionStatus(ref),
+		"github.com/openshift-cloud-functions/js-function-operator/pkg/apis/faas/v1alpha1.JSFunction":       schema_pkg_apis_faas_v1alpha1_JSFunction(ref),
+		"github.com/openshift-cloud-functions/js-function-operator/pkg/apis/faas/v1alpha1.JSFunctionSpec":   schema_pkg_apis_faas_v1alpha1_JSFunctionSpec(ref),
+		"github.com/openshift-cloud-functions/js-function-operator/pkg/apis/faas/v1alpha1.JSFunctionStatus": schema_pkg_apis_faas_v1alpha1_JSFunctionStatus(ref),
 	}
 }
 
@@ -46,19 +46,19 @@ func schema_pkg_apis_faas_v1alpha1_JSFunction(ref common.ReferenceCallback) comm
 					},
 					"spec": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/lance/js-function-operator/pkg/apis/faas/v1alpha1.JSFunctionSpec"),
+							Ref: ref("github.com/openshift-cloud-functions/js-function-operator/pkg/apis/faas/v1alpha1.JSFunctionSpec"),
 						},
 					},
 					"status": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/lance/js-function-operator/pkg/apis/faas/v1alpha1.JSFunctionStatus"),
+							Ref: ref("github.com/openshift-cloud-functions/js-function-operator/pkg/apis/faas/v1alpha1.JSFunctionStatus"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/lance/js-function-operator/pkg/apis/faas/v1alpha1.JSFunctionSpec", "github.com/lance/js-function-operator/pkg/apis/faas/v1alpha1.JSFunctionStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+			"github.com/openshift-cloud-functions/js-function-operator/pkg/apis/faas/v1alpha1.JSFunctionSpec", "github.com/openshift-cloud-functions/js-function-operator/pkg/apis/faas/v1alpha1.JSFunctionStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 	}
 }
 
