@@ -8,6 +8,7 @@ import (
 	"runtime"
 
 	// Import knative types
+	kneventing "knative.dev/eventing/pkg/apis/eventing/v1alpha1"
 	knv1alpha1 "knative.dev/serving/pkg/apis/serving/v1alpha1"
 	knv1beta1 "knative.dev/serving/pkg/apis/serving/v1beta1"
 
@@ -114,6 +115,11 @@ func main() {
 
 	if err := knv1beta1.AddToScheme(mgr.GetScheme()); err != nil {
 		log.Error(err, "Can't register the knative v1beta1 scheme")
+		os.Exit(1)
+	}
+
+	if err := kneventing.AddToScheme(mgr.GetScheme()); err != nil {
+		log.Error(err, "Can't register the knative eventing scheme")
 		os.Exit(1)
 	}
 

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	kneventing "knative.dev/eventing/pkg/apis/eventing/v1alpha1"
 	knv1alpha1 "knative.dev/serving/pkg/apis/serving/v1alpha1"
 	knv1beta1 "knative.dev/serving/pkg/apis/serving/v1beta1"
 
@@ -60,6 +61,22 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
+	// Watch for changes to secondary resources KnChanel and KnSubscription and requeue the owner JSFunction
+	err = c.Watch(&source.Kind{Type: &kneventing.Channel{}}, &handler.EnqueueRequestForOwner{
+		IsController: true,
+		OwnerType:    &faasv1alpha1.JSFunction{},
+	})
+	if err != nil {
+		return err
+	}
+	err = c.Watch(&source.Kind{Type: &kneventing.Subscription{}}, &handler.EnqueueRequestForOwner{
+		IsController: true,
+		OwnerType:    &faasv1alpha1.JSFunction{},
+	})
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -100,8 +117,8 @@ func (r *ReconcileJSFunction) Reconcile(request reconcile.Request) (reconcile.Re
 	}
 
 	// Check if a Service for this JSFunction already exists, if not create a new one
-	found := &knv1alpha1.Service{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: function.Name, Namespace: function.Namespace}, found)
+	knService := &knv1alpha1.Service{}
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: function.Name, Namespace: function.Namespace}, knService)
 	if err != nil && errors.IsNotFound(err) {
 		// No service for this function exists. Create a new one
 
@@ -137,18 +154,83 @@ func (r *ReconcileJSFunction) Reconcile(request reconcile.Request) (reconcile.Re
 		return reconcile.Result{}, err
 	}
 
-	reqLogger.Info("JSFunction Service exists.", "Service.Namespace", found.Namespace, "Service.Name", found.Name)
+	/////// Knative Eventing section
+	// Create or delete Channel
+	knChannel := &kneventing.Channel{}
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: function.Name, Namespace: function.Namespace}, knChannel)
+	if err != nil && errors.IsNotFound(err) {
+		if function.Spec.Events {
+			// Create channel
+			channel, err := r.channelForFunction(function)
+			if err != nil {
+				return reconcile.Result{}, err
+			}
+			err = r.client.Create(context.TODO(), channel)
+			if err != nil {
+				reqLogger.Error(err, "Failed to create new Channel.", "Channel.Namespace", channel.Namespace, "Channel.Name", channel.Name)
+				return reconcile.Result{}, err
+			}
+		}
+	} else {
+		if !function.Spec.Events && knChannel.ObjectMeta.DeletionTimestamp == nil {
+			err = r.client.Delete(context.TODO(), knChannel)
+			if err != nil && !errors.IsNotFound(err) {
+				reqLogger.Error(err, "failed to delete Channel")
+				return reconcile.Result{}, err
+			}
+		}
+	}
+
+	// Create or delete Subscription
+	knSubscription := &kneventing.Subscription{}
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: function.Name, Namespace: function.Namespace}, knSubscription)
+	if err != nil && errors.IsNotFound(err) {
+		if function.Spec.Events {
+			// Create subscription
+			subscription, err := r.subscriptionForFunction(function)
+			if err != nil {
+				return reconcile.Result{}, err
+			}
+			err = r.client.Create(context.TODO(), subscription)
+			if err != nil {
+				reqLogger.Error(err, "Failed to create new Subscription.", "Subscription.Namespace", subscription.Namespace, "Subscription.Name", subscription.Name)
+				return reconcile.Result{}, err
+			}
+		}
+	} else {
+		if !function.Spec.Events && knSubscription.ObjectMeta.DeletionTimestamp == nil {
+			err = r.client.Delete(context.TODO(), knSubscription)
+			if err != nil && !errors.IsNotFound(err) {
+				reqLogger.Error(err, "failed to delete Subscription")
+				return reconcile.Result{}, err
+			}
+		}
+
+	}
+	///////
+
+	// TODO update the JSFunction status with the pod names
+	// TODO update status nodes if necessary
+
+	reqLogger.Info("JSFunction Service exists.", "Service.Namespace", knService.Namespace, "Service.Name", knService.Name)
 	return reconcile.Result{}, nil
 }
 
 func (r *ReconcileJSFunction) configMapWithFunction(f *faasv1alpha1.JSFunction) (*corev1.ConfigMap, error) {
+
+	data := map[string]string{"index.js": f.Spec.Func}
+
+	if f.Spec.Package != "" {
+		data["package.json"] = f.Spec.Package
+	}
+
 	// Create a config map containing the user code
 	configMap := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      f.Name,
 			Namespace: f.Namespace,
 		},
-		Data: map[string]string{"index.js": f.Spec.Func, "package.json": f.Spec.Package},
+		Data: data,
 	}
 	if err := controllerutil.SetControllerReference(f, configMap, r.scheme); err != nil {
 		return nil, err
@@ -191,10 +273,10 @@ func createPodSpec(functionName, configMapName string) corev1.PodSpec {
 	volumeName := fmt.Sprintf("%s-source", functionName)
 	return corev1.PodSpec{
 		Containers: []corev1.Container{{
-			Image: "docker.io/lanceball/js-runtime",
+			Image: "docker.io/zroubalik/js-runtime",
 			Name:  fmt.Sprintf("nodejs-%s", functionName),
 			Ports: []corev1.ContainerPort{{
-				ContainerPort: 8181,
+				ContainerPort: 8080,
 			}},
 			VolumeMounts: []corev1.VolumeMount{
 				{
@@ -220,4 +302,58 @@ func createConfigMapVolume(volumeName, configMapName string) corev1.Volume {
 			},
 		},
 	}
+}
+
+func (r *ReconcileJSFunction) channelForFunction(f *faasv1alpha1.JSFunction) (*kneventing.Channel, error) {
+
+	channel := &kneventing.Channel{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      f.Name,
+			Namespace: f.Namespace,
+		},
+		Spec: kneventing.ChannelSpec{
+			Provisioner: &corev1.ObjectReference{
+				Name:       "in-memory",
+				Kind:       "InMemoryChannel",
+				APIVersion: kneventing.SchemeGroupVersion.String(),
+			},
+		},
+	}
+
+	// Set JSFunction instance as the owner and controller
+	if err := controllerutil.SetControllerReference(f, channel, r.scheme); err != nil {
+		return nil, err
+	}
+	return channel, nil
+}
+
+func (r *ReconcileJSFunction) subscriptionForFunction(f *faasv1alpha1.JSFunction) (*kneventing.Subscription, error) {
+	subscription := &kneventing.Subscription{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      f.Name,
+			Namespace: f.Namespace,
+		},
+
+		Spec: kneventing.SubscriptionSpec{
+			Channel: corev1.ObjectReference{
+				Name:       f.Name,
+				Kind:       "Channel",
+				APIVersion: kneventing.SchemeGroupVersion.String(),
+			},
+			Subscriber: &kneventing.SubscriberSpec{
+				Ref: &corev1.ObjectReference{
+					Name:       f.Name,
+					Kind:       "Service",
+					APIVersion: knv1alpha1.SchemeGroupVersion.String(),
+				},
+			},
+		},
+	}
+
+	// Set JSFunction instance as the owner and controller
+	if err := controllerutil.SetControllerReference(f, subscription, r.scheme); err != nil {
+		return nil, err
+	}
+
+	return subscription, nil
 }
