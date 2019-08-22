@@ -11,7 +11,8 @@ import (
 // +k8s:openapi-gen=true
 type JSFunctionSpec struct {
 	Func    string `json:"func"`
-	Package string `json:"package"`
+	Package string `json:"package,omitempty"`
+	Events  bool   `json:"events,omitempty"`
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
 	// Add custom validation using kubebuilder tags: https://book.kubebuilder.io/beyond_basics/generating_crd.html
