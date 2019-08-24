@@ -307,7 +307,7 @@ func (r *ReconcileJSFunction) serviceForFunction(f *faasv1alpha1.JSFunction, con
 					},
 					Spec: knv1alpha1.RevisionSpec{
 						RevisionSpec: knv1beta1.RevisionSpec{
-							PodSpec: createPodSpec(f.Name, configMapName, imageName),
+							PodSpec: createPodSpec(f.Name, imageName),
 						},
 					},
 				},
@@ -324,8 +324,7 @@ func (r *ReconcileJSFunction) serviceForFunction(f *faasv1alpha1.JSFunction, con
 	return service, nil
 }
 
-func createPodSpec(functionName, configMapName string, imageName string) corev1.PodSpec {
-	volumeName := fmt.Sprintf("%s-source", functionName)
+func createPodSpec(functionName, imageName string) corev1.PodSpec {
 	return corev1.PodSpec{
 		Containers: []corev1.Container{{
 			Image: imageName,
@@ -333,16 +332,7 @@ func createPodSpec(functionName, configMapName string, imageName string) corev1.
 			Ports: []corev1.ContainerPort{{
 				ContainerPort: 8080,
 			}},
-			VolumeMounts: []corev1.VolumeMount{
-				{
-					Name:      volumeName,
-					MountPath: "/home/node/usr",
-				},
-			},
 		}},
-		Volumes: []corev1.Volume{
-			createConfigMapVolume(volumeName, configMapName),
-		},
 	}
 }
 
