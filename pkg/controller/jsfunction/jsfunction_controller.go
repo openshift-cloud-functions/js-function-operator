@@ -47,6 +47,8 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
+	// Create the build Task
+
 	// Watch for changes to primary resource JSFunction
 	err = c.Watch(&source.Kind{Type: &faasv1alpha1.JSFunction{}}, &handler.EnqueueRequestForObject{})
 	if err != nil {
@@ -142,7 +144,7 @@ func (r *ReconcileJSFunction) Reconcile(request reconcile.Request) (reconcile.Re
 		}
 		err = r.client.Create(context.TODO(), build)
 		if err != nil {
-			reqLogger.Error(err, "Failed to create TaskRun for function build.", "Service.Namespace", build.Namespace, "ConfigMap.Name", build.Name)
+			reqLogger.Error(err, "Failed to create TaskRun for function build.", "TaskRun.Namespace", build.Namespace, "TaskRun.Name", build.Name)
 			return reconcile.Result{}, err
 		}
 
