@@ -32,9 +32,17 @@ rules:
   verbs:
   - '*'
 - apiGroups:
+  - eventing.knative.dev
+  resources:
+  - subscriptions
+  - channels
+  verbs:
+  - '*'
+- apiGroups:
   - tekton.dev
   resources:
   - tasks
+  - taskruns
   verbs:
   - '*'
 - apiGroups:
