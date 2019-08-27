@@ -74,6 +74,12 @@ func schema_pkg_apis_faas_v1alpha1_JSFunctionSpec(ref common.ReferenceCallback) 
 							Format: "",
 						},
 					},
+					"deployment": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"integer"},
+							Format: "int32",
+						},
+					},
 					"package": {
 						SchemaProps: spec.SchemaProps{
 							Type:   []string{"string"},
@@ -86,14 +92,8 @@ func schema_pkg_apis_faas_v1alpha1_JSFunctionSpec(ref common.ReferenceCallback) 
 							Format: "",
 						},
 					},
-					"deployment": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"integer"},
-							Format: "int32",
-						},
-					},
 				},
-				Required: []string{"func"},
+				Required: []string{"func", "deployment"},
 			},
 		},
 		Dependencies: []string{},

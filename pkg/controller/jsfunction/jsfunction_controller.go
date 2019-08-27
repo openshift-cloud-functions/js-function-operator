@@ -118,10 +118,19 @@ func (r *ReconcileJSFunction) Reconcile(request reconcile.Request) (reconcile.Re
 		return reconcile.Result{}, err
 	}
 
+	// Update the function deployment status
+	function.Spec.Deployment = function.Spec.Deployment + 1
 	build, err := r.createOrUpdateSourceBuild(function)
 	if err != nil {
 		reqLogger.Error(err, "Failed to create or update function build.")
 		return reconcile.Result{}, err
+	} else if build != nil {
+		reqLogger.Info(fmt.Sprintf("Updating JSFunction Deployment ID to %d", function.Spec.Deployment))
+		err = r.client.Update(context.TODO(), function)
+		if err != nil {
+			reqLogger.Error(err, "Failed to update JSFunction Deployment ID")
+			return reconcile.Result{}, err
+		}
 	}
 
 	// Check if a Service for this JSFunction already exists, if not create a new one
@@ -147,16 +156,7 @@ func (r *ReconcileJSFunction) Reconcile(request reconcile.Request) (reconcile.Re
 		reqLogger.Error(err, "Failed to get Service for JSFunction")
 		return reconcile.Result{}, err
 	} else if build != nil {
-		// Service already exists, but a build was generated
-		// Update the JSFunction Deployment nummber
-		function.Spec.Deployment = function.Spec.Deployment + 1
-		reqLogger.Info(fmt.Sprintf("Updating JSFunction Deployment ID to %d", function.Spec.Deployment))
-		err = r.client.Update(context.TODO(), function)
-		if err != nil {
-			reqLogger.Error(err, "Failed to update JSFunction Deployment ID")
-			return reconcile.Result{}, err
-		}
-
+		// The Service already exists, but we created a new build
 		// Update the Service so that it triggers a redeployment
 		reqLogger.Info("Updating Service spec with new build info")
 		knService.Spec.ConfigurationSpec.Template.Spec.RevisionSpec.PodSpec.Containers[0].Image = runtimeImageForFunction(function)
@@ -165,6 +165,9 @@ func (r *ReconcileJSFunction) Reconcile(request reconcile.Request) (reconcile.Re
 			reqLogger.Error(err, "Failed to update Knative Service")
 			return reconcile.Result{}, err
 		}
+
+		// Service updated successfully, return and requeue
+		return reconcile.Result{Requeue: true}, nil
 	}
 
 	/////// Knative Eventing section
@@ -221,11 +224,6 @@ func (r *ReconcileJSFunction) Reconcile(request reconcile.Request) (reconcile.Re
 
 	}
 	///////
-
-	// TODO update the JSFunction status with the pod names
-	// TODO update status nodes if necessary
-
-	reqLogger.Info("JSFunction Service exists.", "Service.Namespace", knService.Namespace, "Service.Name", knService.Name)
 	return reconcile.Result{}, nil
 }
 

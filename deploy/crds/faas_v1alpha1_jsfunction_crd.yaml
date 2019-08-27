@@ -40,6 +40,7 @@ spec:
               type: string
           required:
           - func
+          - deployment
           type: object
         status:
           properties:
