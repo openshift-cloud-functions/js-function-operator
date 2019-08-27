@@ -19,8 +19,8 @@ import (
  * and if this is a new ConfigMap or the contents have been changed, a Tekton
  * TaskRun is created to run a build.
  */
-func (r *ReconcileJSFunction) createOrUpdateSourceBuild(function *faasv1alpha1.JSFunction) error {
-	// Check if a ConfigMap containing the function code exists yet
+func (r *ReconcileJSFunction) createOrUpdateSourceBuild(function *faasv1alpha1.JSFunction) (*pipeline.TaskRun, error) {
+	var build *pipeline.TaskRun
 	logger := log.WithValues("Function.Namespace", function.Namespace, "Function.Name", function.Name)
 	configMap := &corev1.ConfigMap{}
 	err := r.client.Get(context.TODO(), types.NamespacedName{Name: function.Name, Namespace: function.Namespace}, configMap)
@@ -41,7 +41,7 @@ func (r *ReconcileJSFunction) createOrUpdateSourceBuild(function *faasv1alpha1.J
 			logger.Error(err, "Cannot create ConfigMap for function")
 		}
 		logger.Info("Creating TaskRun for function build.")
-		err = r.runBuild(function)
+		build, err = r.runBuild(function)
 	} else if err != nil {
 		logger.Error(err, "Error getting ConfigMap for function")
 	} else if configMap.Data["index.js"] != function.Spec.Func {
@@ -53,33 +53,10 @@ func (r *ReconcileJSFunction) createOrUpdateSourceBuild(function *faasv1alpha1.J
 			logger.Error(err, "Error updating ConfigMap for function")
 		}
 		logger.Info("Creating TaskRun for function build.")
-		err = r.runBuild(function)
+		build, err = r.runBuild(function)
 	}
 
-	return err
-}
-
-func (r *ReconcileJSFunction) runBuild(function *faasv1alpha1.JSFunction) error {
-	build := buildForFunction(function)
-	if err := controllerutil.SetControllerReference(function, build, r.scheme); err != nil {
-		return err
-	}
-	return r.client.Create(context.TODO(), build)
-}
-
-func (r *ReconcileJSFunction) configMapWithFunction(f *faasv1alpha1.JSFunction) (*corev1.ConfigMap, error) {
-	// Create a config map containing the user code
-	configMap := &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      f.Name,
-			Namespace: f.Namespace,
-		},
-		Data: mapFunctionData(f),
-	}
-	if err := controllerutil.SetControllerReference(f, configMap, r.scheme); err != nil {
-		return nil, err
-	}
-	return configMap, nil
+	return build, err
 }
 
 func mapFunctionData(f *faasv1alpha1.JSFunction) map[string]string {
@@ -91,8 +68,16 @@ func mapFunctionData(f *faasv1alpha1.JSFunction) map[string]string {
 	return data
 }
 
+func (r *ReconcileJSFunction) runBuild(function *faasv1alpha1.JSFunction) (*pipeline.TaskRun, error) {
+	build := buildForFunction(function)
+	if err := controllerutil.SetControllerReference(function, build, r.scheme); err != nil {
+		return nil, err
+	}
+	return build, r.client.Create(context.TODO(), build)
+}
+
 func runtimeImageForFunction(f *faasv1alpha1.JSFunction) string {
-	return fmt.Sprintf("image-registry.openshift-image-registry.svc:5000/%s/%s-runtime", f.Namespace, f.Name)
+	return fmt.Sprintf("image-registry.openshift-image-registry.svc:5000/%s/%s-runtime:v%d", f.Namespace, f.Name, f.Spec.Deployment)
 }
 
 func buildForFunction(f *faasv1alpha1.JSFunction) *pipeline.TaskRun {
@@ -124,7 +109,7 @@ func buildForFunction(f *faasv1alpha1.JSFunction) *pipeline.TaskRun {
 							Type: "image",
 							Params: []pipeline.ResourceParam{{
 								Name:  "url",
-								Value: fmt.Sprintf("%s:latest", imageName),
+								Value: imageName,
 							}},
 						},
 					},

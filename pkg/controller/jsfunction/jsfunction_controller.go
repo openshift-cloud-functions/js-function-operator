@@ -118,7 +118,7 @@ func (r *ReconcileJSFunction) Reconcile(request reconcile.Request) (reconcile.Re
 		return reconcile.Result{}, err
 	}
 
-	err = r.createOrUpdateSourceBuild(function)
+	build, err := r.createOrUpdateSourceBuild(function)
 	if err != nil {
 		reqLogger.Error(err, "Failed to create or update function build.")
 		return reconcile.Result{}, err
@@ -146,6 +146,25 @@ func (r *ReconcileJSFunction) Reconcile(request reconcile.Request) (reconcile.Re
 	} else if err != nil {
 		reqLogger.Error(err, "Failed to get Service for JSFunction")
 		return reconcile.Result{}, err
+	} else if build != nil {
+		// Service already exists, but a build was generated
+		// Update the JSFunction Deployment nummber
+		function.Spec.Deployment = function.Spec.Deployment + 1
+		reqLogger.Info(fmt.Sprintf("Updating JSFunction Deployment ID to %d", function.Spec.Deployment))
+		err = r.client.Update(context.TODO(), function)
+		if err != nil {
+			reqLogger.Error(err, "Failed to update JSFunction Deployment ID")
+			return reconcile.Result{}, err
+		}
+
+		// Update the Service so that it triggers a redeployment
+		reqLogger.Info("Updating Service spec with new build info")
+		knService.Spec.ConfigurationSpec.Template.Spec.RevisionSpec.PodSpec.Containers[0].Image = runtimeImageForFunction(function)
+		err = r.client.Update(context.TODO(), knService)
+		if err != nil {
+			reqLogger.Error(err, "Failed to update Knative Service")
+			return reconcile.Result{}, err
+		}
 	}
 
 	/////// Knative Eventing section
@@ -226,7 +245,7 @@ func (r *ReconcileJSFunction) serviceForFunction(f *faasv1alpha1.JSFunction, ima
 						RevisionSpec: knv1beta1.RevisionSpec{
 							PodSpec: corev1.PodSpec{
 								Containers: []corev1.Container{{
-									Image: fmt.Sprintf("%s:latest", imageName),
+									Image: fmt.Sprintf("%s", imageName),
 									Name:  fmt.Sprintf("nodejs-%s", f.Name),
 									Ports: []corev1.ContainerPort{{
 										ContainerPort: 8080,

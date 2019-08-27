@@ -29,6 +29,9 @@ spec:
           type: object
         spec:
           properties:
+            deployment:
+              format: int64
+              type: integer
             events:
               type: boolean
             func:
