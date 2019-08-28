@@ -11,7 +11,7 @@ import (
 // +k8s:openapi-gen=true
 type JSFunctionSpec struct {
 	Func       string `json:"func"`
-	Deployment int    `json:"deployment"`
+	Deployment int    `json:"deployment,omitempty"`
 	Package    string `json:"package,omitempty"`
 	Events     bool   `json:"events,omitempty"`
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster

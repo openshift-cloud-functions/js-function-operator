@@ -93,7 +93,7 @@ func schema_pkg_apis_faas_v1alpha1_JSFunctionSpec(ref common.ReferenceCallback) 
 						},
 					},
 				},
-				Required: []string{"func", "deployment"},
+				Required: []string{"func"},
 			},
 		},
 		Dependencies: []string{},
