@@ -1,0 +1,7 @@
+apiVersion: faas.redhat.com/v1alpha1
+kind: JSFunctionBuild
+metadata:
+  name: example-jsfunctionbuild
+spec:
+  # Add fields here
+  size: 3
