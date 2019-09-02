@@ -13,8 +13,6 @@ import (
 	"testing"
 )
 
-const OPERATOR_NAME string = "js-function-operator"
-
 var (
 	functionName = "test-function"
 	functionSrc  = `
@@ -25,6 +23,8 @@ var (
 
 func TestDeployFunction(t *testing.T) {
 	ctx, f, namespace := test.E2EBootstrap(t)
+
+	t.Logf("Deploying function in namespace %v", namespace)
 
 	exampleJs := &jsfunction.JSFunction{
 		ObjectMeta: metav1.ObjectMeta{
