@@ -14,14 +14,13 @@ spec:
       type: image
   steps:
   - name: knative-service-update
-    # image: gcr.io/knative-nightly/knative.dev/client/cmd/kn:latest
-    image: quay.io/rhdevelopers/clients
-    command: ["kn"]
+    image: gcr.io/knative-nightly/knative.dev/client/cmd/kn
+    # image: quay.io/rhdevelopers/clients
+    command: ["/ko-app/kn"]
     args:
-      - service 
+      - service
       - update 
       # create or update
-      - --force
       - ${inputs.params.FUNCTION_NAME}
       - --image=${outputs.resources.image.url}
 ---

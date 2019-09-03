@@ -190,13 +190,6 @@ func (r *ReconcileJSFunction) Reconcile(request reconcile.Request) (reconcile.Re
 	} else if err != nil {
 		reqLogger.Error(err, "Failed to get Service for JSFunction")
 		return reconcile.Result{}, err
-	} else if knService.Spec.Template.Spec.RevisionSpec.PodSpec.Containers[0].Image != jsFunctionBuild.Spec.Image {
-		// Update the service with the latest image revision
-		reqLogger.Info("Updating kn Service with latest image revision")
-		knService.Spec.Template.Spec.RevisionSpec.PodSpec.Containers[0].Image = jsFunctionBuild.Spec.Image
-		if err = r.client.Update(context.TODO(), knService); err != nil {
-			return reconcile.Result{}, err
-		}
 	}
 	// knative Service section end
 
