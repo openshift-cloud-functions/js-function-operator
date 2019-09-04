@@ -6,10 +6,8 @@ import (
 	"github.com/openshift-cloud-functions/js-function-operator/test"
 	framework "github.com/operator-framework/operator-sdk/pkg/test"
 	"github.com/stretchr/testify/assert"
-	"io/ioutil"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	knservingclient "knative.dev/serving/pkg/client/clientset/versioned"
-	"net/http"
 	"testing"
 )
 
@@ -46,15 +44,6 @@ func TestDeployFunction(t *testing.T) {
 	knService := test.WaitForKnativeServiceReadyDefault(t, &knClient, functionName, namespace)
 	serviceURL := knService.Status.Address.URL
 
-	// Try to do a request
-	res, err := http.Get(serviceURL.String())
-
-	assert.NoError(t, err)
-	assert.Equal(t, 200, res.StatusCode)
-
-	body, err := ioutil.ReadAll(res.Body)
-
-	assert.NoError(t, err)
-	assert.Equal(t, "ok", string(body))
+	test.AssertGetRequest(t, serviceURL.String(), 200, []byte("ok"))
 
 }
