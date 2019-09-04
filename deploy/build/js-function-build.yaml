@@ -1,3 +1,29 @@
+---
+apiVersion: tekton.dev/v1alpha1
+kind: Task
+metadata:
+  name: js-function-update-service
+spec:
+  inputs:
+    params:
+    - name: FUNCTION_NAME
+      description: The js function name
+  outputs:
+    resources:
+    - name: image
+      type: image
+  steps:
+  - name: knative-service-update
+    image: gcr.io/knative-nightly/knative.dev/client/cmd/kn
+    # image: quay.io/rhdevelopers/clients
+    command: ["/ko-app/kn"]
+    args:
+      - service
+      - update 
+      # create or update
+      - ${inputs.params.FUNCTION_NAME}
+      - --image=${outputs.resources.image.url}
+---
 apiVersion: tekton.dev/v1alpha1
 kind: Task
 metadata:
@@ -67,3 +93,39 @@ spec:
   - name: sourcedir
     configMap:
       name: ${inputs.params.FUNCTION_NAME}
+---
+apiVersion: tekton.dev/v1alpha1
+kind: Pipeline
+metadata:
+  name: js-function-build-pipeline
+spec:
+  resources:
+  - name: image
+    type: image
+  params:
+  - name: FUNCTION_NAME
+    description: The name of the function being built
+    default: user-function
+  tasks:
+  - name: build-runtime
+    taskRef: 
+      name: js-function-build-runtime
+    resources:
+      outputs:
+      - name: image
+        resource: image
+    params:
+    - name: FUNCTION_NAME
+      value: ${params.FUNCTION_NAME}
+  - name: update-service
+    taskRef: 
+      name: js-function-update-service
+    resources:
+      outputs:
+      - name: image
+        resource: image
+    params:
+    - name: FUNCTION_NAME
+      value: ${params.FUNCTION_NAME}
+    runAfter: 
+    - build-runtime

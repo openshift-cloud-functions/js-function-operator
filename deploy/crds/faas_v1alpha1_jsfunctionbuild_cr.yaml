@@ -1,0 +1,8 @@
+apiVersion: faas.redhat.com/v1alpha1
+kind: JSFunctionBuild
+metadata:
+  name: example-jsfunctionbuild
+spec:
+  # Add fields here
+  # Note that the JSFunctionBuild type is typically not created
+  # directly by the user. This is managed by the controller.
