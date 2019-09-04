@@ -4,4 +4,5 @@ metadata:
   name: example-jsfunctionbuild
 spec:
   # Add fields here
-  size: 3
+  # Note that the JSFunctionBuild type is typically not created
+  # directly by the user. This is managed by the controller.
