@@ -6,13 +6,23 @@ subjects:
 - kind: ServiceAccount
   name: js-function-operator
 roleRef:
-- kind: Role
+  kind: Role
   name: js-function-operator
   apiGroup: rbac.authorization.k8s.io
+  
   # This operator modifies the cluster (deploys to it) you must use a service
   # account with permission to admin the cluster (or make your default user an admin
   # of the `default` namespace with default-cluster-admin.
-- kind: ClusterRole
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: js-function-operator-cluster
+subjects:
+- kind: ServiceAccount
+  name: js-function-operator
+roleRef:
+  kind: ClusterRole
   name: cluster-admin
   apiGroup: rbac.authorization.k8s.io
     

@@ -1,0 +1,11 @@
+apiVersion: sources.eventing.knative.dev/v1alpha1
+kind: CronJobSource
+metadata:
+  name: testfunc-cronjob-source
+spec:
+  schedule: "* * * * *"
+  data: '{"message": "Example message to test Knative Eventing functionality."}'
+  sink:
+    apiVersion: eventing.knative.dev/v1alpha1
+    kind: Channel
+    name: testfunc
