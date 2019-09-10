@@ -55,7 +55,7 @@ spec:
   - name: generate
     image: quay.io/openshift-pipeline/s2i
     workingdir:  '/home/node/usr'
-    command: ['s2i', 'build', '.', 'quay.io/lanceball/js-runtime:0.0.1', '--as-dockerfile', '/home/node/build/Dockerfile.gen']
+    command: ['s2i', 'build', '.', 'docker.io/zroubalik/js-runtime:0.0.1', '--as-dockerfile', '/home/node/build/Dockerfile.gen']
     volumeMounts:
     - name: gen-source
       mountPath: /home/node/usr

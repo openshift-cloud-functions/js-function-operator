@@ -12,7 +12,9 @@ the controller takes the following steps during reconciliation.
 * Create a `ConfigMap` containing with the user supplied data (index.js/package.json)
 * Create a `TaskRun`, installing any dependencies and building a runtime image using [`lanceball/js-runtime`](https://github.com/openshift-cloud-functions/faas-js-runtime-image)
 * Create a `PodSpec` for the `Service` specifying the runtime image just created
-* Wires up knative eventing (still a work in progress)
+* Wires up knative eventing, if `events` is set to `true` in a `JSFunction` custom resource. 
+Knative Eventing objects `Subscription` and `Channel` are created and acts as a sink for the function.
+Events sent to the `Channel` are passed to the function.
 
 This is still in early stages of development and may change rapidly.
 
@@ -31,10 +33,11 @@ Be sure you are logged in to your cluster, then run the following commands.
 
 ```sh
 kubectl apply -f deploy/crds/faas_v1alpha1_jsfunction_crd.yaml
+kubectl apply -f deploy/crds/faas_v1alpha1_jsfunctionbuild_crd.yaml
 kubectl apply -f deploy/role.yaml
 kubectl apply -f deploy/role_binding.yaml
 kubectl apply -f deploy/service_account.yaml
-kubectl apply -f deploy/build/js-function-build-task.yaml
+kubectl apply -f deploy/build/js-function-build.yaml
 kubectl apply -f deploy/operator.yaml
 ```
 
@@ -59,3 +62,12 @@ To deploy a function, run
 kubectl apply -f deploy/crds/faas_v1alpha1_jsfunction_cr.yaml
 ```
 
+### Testing the Knative Eventing wiring
+Set `events` to `true` in a `JSFunction` custom resource and deploy this CR.
+
+To emit events to the automatically created `Channel`, run command specified below.
+This will emit event every minute.
+
+```sh
+kubectl apply -f hack/cronjob-source.yaml
+```
