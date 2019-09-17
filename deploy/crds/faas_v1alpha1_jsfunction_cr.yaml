@@ -3,7 +3,6 @@ kind: JSFunction
 metadata:
   name: testfunc
 spec:
-  # Add fields here
   events: true
   package: |
     {

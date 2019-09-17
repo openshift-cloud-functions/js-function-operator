@@ -16,10 +16,17 @@ spec:
       containers:
         - name: js-function-operator
           # Replace this with the built image name
-          image: docker.io/openshiftcloudfunctions/js-function-operator:v0.0.1
+          image: docker.io/oscf/js-function-operator:v0.0.1
           command:
           - js-function-operator
           imagePullPolicy: Always
+          resources:
+            limits:
+              memory: "200Mi"
+              cpu: "1"
+            requests:
+              memory: "100Mi"
+              cpu: 500m
           env:
             - name: WATCH_NAMESPACE
               valueFrom:
