@@ -31,25 +31,20 @@ Be sure you have these installed in your namespace.
 #### Deploy the operator
 Be sure you are logged in to your cluster, then run the following commands.
 
-```sh
-kubectl apply -f deploy/crds/faas_v1alpha1_jsfunction_crd.yaml
-kubectl apply -f deploy/crds/faas_v1alpha1_jsfunctionbuild_crd.yaml
-kubectl apply -f deploy/role.yaml
-kubectl apply -f deploy/role_binding.yaml
-kubectl apply -f deploy/service_account.yaml
-kubectl apply -f deploy/build/js-function-build.yaml
-kubectl apply -f deploy/operator.yaml
+```console
+./deploy/deploy.sh
 ```
 
 This will set up a service account with appropriate roles, add the `JSFunction`
 type and a build `Task` for the function, and finally deploy the operator to the
 current namespace. 
 
-#### Add privileges for the service account
+#### Note privileges for the service account
 Among the things that happen when a new `JSFunction` is created, is that
 a build task involving the creation of runtime images runs. This requires
-permissions not available by default on OpenShift. Add these permssions
-to the `js-function-operator` service account with the following commands.
+permissions not available by default on OpenShift. These permissions are added
+to the `js-function-operator` service account with the following commands when
+you run `./deploy/deploy.sh`.
 
 ```sh
 oc adm policy add-role-to-user edit -z js-function-operator
