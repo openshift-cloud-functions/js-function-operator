@@ -15,7 +15,6 @@ spec:
       serviceAccountName: js-function-operator
       containers:
         - name: js-function-operator
-          # Replace this with the built image name
           image: docker.io/oscf/js-function-operator:v0.0.1
           command:
           - js-function-operator

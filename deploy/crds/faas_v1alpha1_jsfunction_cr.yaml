@@ -22,7 +22,7 @@ spec:
       const ret = 'This is the test function for Node.js FaaS. Success.';
       if (isNumber(ret)) throw new Error('Something is wrong with modules');
       if (context.cloudevent !== undefined) {
-        console.log(`Got cloud event ${context.cloudevent}`);
+        console.log(`Got cloud event message: "${context.cloudevent.data.message}"`);
       }
       return ret;
     };
