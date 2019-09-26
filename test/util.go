@@ -1,30 +1,33 @@
 package test
 
 import (
+	"io/ioutil"
+	"net/http"
+	"testing"
+	"time"
+
 	"github.com/openshift-cloud-functions/js-function-operator/pkg/apis"
 	jsfunction "github.com/openshift-cloud-functions/js-function-operator/pkg/apis/faas/v1alpha1"
 	framework "github.com/operator-framework/operator-sdk/pkg/test"
 	"github.com/operator-framework/operator-sdk/pkg/test/e2eutil"
 	"github.com/stretchr/testify/assert"
-	"io/ioutil"
 	metav1errors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"knative.dev/serving/pkg/apis/serving/v1alpha1"
 	servingv1alpha1 "knative.dev/serving/pkg/client/clientset/versioned/typed/serving/v1alpha1"
-	"net/http"
-	"testing"
-	"time"
 )
 
 const (
 	defaultRetryInterval = 1 * time.Second
-	defaultTimeout       = defaultRetryInterval * 40
+	defaultTimeout       = time.Minute * 5
 	cleanupRetryInterval = time.Second * 1
 	cleanupTimeout       = time.Second * 5
-	OPERATOR_NAME        = "js-function-operator"
+	operatorName         = "js-function-operator"
 )
 
+// AssertGetRequest ensures that the endpoint `url` can be accessed
+// with an HTTP GET request.
 func AssertGetRequest(t *testing.T, url string, expectedStatusCode int, expectedBody []byte) {
 	res, err := http.Get(url)
 	if err != nil {
@@ -43,10 +46,14 @@ func AssertGetRequest(t *testing.T, url string, expectedStatusCode int, expected
 	assert.Equal(t, expectedBody, b)
 }
 
+// WaitForKnativeServiceReadyDefault waits for a Knative service to become
+// available, failing if the service is not available after the default timeout.
 func WaitForKnativeServiceReadyDefault(t *testing.T, servingClient *servingv1alpha1.ServingV1alpha1Interface, name string, namespace string) *v1alpha1.Service {
 	return WaitForKnativeServiceReady(t, servingClient, name, namespace, defaultRetryInterval, defaultTimeout)
 }
 
+// WaitForKnativeServiceReady waits for a Knative service to become available,
+// failing if the service is not available after the provided Duration
 func WaitForKnativeServiceReady(t *testing.T, servingClient *servingv1alpha1.ServingV1alpha1Interface, name string, namespace string, retryInterval, timeout time.Duration) *v1alpha1.Service {
 	var service *v1alpha1.Service
 
@@ -57,10 +64,12 @@ func WaitForKnativeServiceReady(t *testing.T, servingClient *servingv1alpha1.Ser
 				t.Logf("Waiting for availability of %s service\n", name)
 				return false, nil
 			}
+			t.Logf("Unrecoverable error while waiting for service %s to initialize", name)
 			return false, err
 		}
 
 		if service.Status.IsReady() {
+			t.Logf("Service %s is ready\n", name)
 			return true, nil
 		}
 		t.Logf("Waiting for availability of %s service. Actual status: %+v\n", name, service.Status)
@@ -72,11 +81,18 @@ func WaitForKnativeServiceReady(t *testing.T, servingClient *servingv1alpha1.Ser
 	return service
 }
 
-// This function bootstraps an e2e adding CRDs, initializing the test ctx and deploying the operator
+// E2EBootstrap sets up an e2e test adding CRDs, initializing the test ctx and deploying the operator
 func E2EBootstrap(t *testing.T) (*framework.TestCtx, *framework.Framework, string) {
 	// Add CRDs
 	jsFunctionList := &jsfunction.JSFunctionList{}
 	err := framework.AddToFrameworkScheme(apis.AddToScheme, jsFunctionList)
+	if err != nil {
+		t.Fatalf("failed to add custom resource scheme to framework: %v", err)
+	}
+	t.Log("Added CRDs")
+
+	jsFunctionBuildList := &jsfunction.JSFunctionBuildList{}
+	err = framework.AddToFrameworkScheme(apis.AddToScheme, jsFunctionBuildList)
 	if err != nil {
 		t.Fatalf("failed to add custom resource scheme to framework: %v", err)
 	}
@@ -98,7 +114,7 @@ func E2EBootstrap(t *testing.T) (*framework.TestCtx, *framework.Framework, strin
 		t.Fatal(err)
 	}
 	f := framework.Global
-	err = e2eutil.WaitForDeployment(t, f.KubeClient, namespace, OPERATOR_NAME, 1, defaultRetryInterval, defaultTimeout)
+	err = e2eutil.WaitForDeployment(t, f.KubeClient, namespace, operatorName, 1, defaultRetryInterval, defaultTimeout)
 	if err != nil {
 		t.Fatal(err)
 	}
