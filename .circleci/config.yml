@@ -28,10 +28,10 @@ jobs:
       - checkout
       - kube-orb/install-kubectl
       - kube-orb/install-kubeconfig
-      - run: curl -Lo minikube https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64 && \
-            sudo chmod +x minikube && \
-            sudo cp minikube /usr/local/bin && rm minikube && \
-            sudo -E minikube start --vm-driver=none --kubernetes-version=v1.13.0 --extra-config=apiserver.enable-admission-plugins="LimitRanger,NamespaceExists,NamespaceLifecycle,ResourceQuota,ServiceAccount,DefaultStorageClass,MutatingAdmissionWebhook" --cpus 2 --memory 4096 \
+      - run: curl -Lo minikube https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+      - run: sudo chmod +x minikube
+      - run: sudo cp minikube /usr/local/bin && rm minikube
+      - run: sudo -E minikube start --vm-driver=none --kubernetes-version=v1.13.0 --extra-config=apiserver.enable-admission-plugins="LimitRanger,NamespaceExists,NamespaceLifecycle,ResourceQuota,ServiceAccount,DefaultStorageClass,MutatingAdmissionWebhook" --cpus 2 --memory 4096 \
 
       # specify any bash command here prefixed with `run: `
       - run: dep install -v
