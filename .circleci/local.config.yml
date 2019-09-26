@@ -6,12 +6,6 @@ jobs:
     - image: circleci/golang:1.13.1
     working_directory: /go/src/github.com/openshift-cloud-functions/js-function-operator
     steps:
-    - run:
-        command: sudo chmod -R 777 /tmp/_circleci_local_build_repo
-    - run:
-        command: ls -ld /tmp/_circleci_local_build_repo
-    - run:
-        command: ls -ld /go/src/github.com/openshift-cloud-functions/js-function-operator
     - checkout
     - run:
         command: |
@@ -44,8 +38,8 @@ jobs:
           fi
         name: Install kubeconfig
     - run:
-        command: curl -Lo minikube && \ https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
-          && chmod +x minikube && \ sudo cp minikube /usr/local/bin && rm minikube
+        command: curl -Lo minikube https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+          && \ chmod +x minikube && \ sudo cp minikube /usr/local/bin && rm minikube
           && \ sudo -E minikube start --vm-driver=none --kubernetes-version=v1.13.0
           --extra-config=apiserver.enable-admission-plugins="LimitRanger,NamespaceExists,NamespaceLifecycle,ResourceQuota,ServiceAccount,DefaultStorageClass,MutatingAdmissionWebhook"
           --cpus 2 --memory 4096 \
@@ -81,14 +75,17 @@ workflows:
 #     ####   /go/src/bitbucket.org/circleci/go-tool
 #     working_directory: /go/src/github.com/openshift-cloud-functions/js-function-operator
 #     steps:
-#       - run: sudo chmod -R 777 /tmp/_circleci_local_build_repo
-#       - run: ls -ld /tmp/_circleci_local_build_repo
-#       - run: ls -ld /go/src/github.com/openshift-cloud-functions/js-function-operator
+#     ## The first three steps in this job seem to be required in order for the
+#     ## circleci cli to actually work. I don't think these are really necessary
+#     ## for a real CI run on circleci.com
+#       # - run: sudo chmod -R g+r /tmp/_circleci_local_build_repo
+#       # - run: ls -ld /tmp/_circleci_local_build_repo
+#       # - run: ls -ld /go/src/github.com/openshift-cloud-functions/js-function-operator
 #       - checkout
 #       - kube-orb/install-kubectl
 #       - kube-orb/install-kubeconfig
-#       - run: curl -Lo minikube && \\
-#             https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64 && chmod +x minikube && \\
+#       - run: curl -Lo minikube https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64 && \\
+#             chmod +x minikube && \\
 #             sudo cp minikube /usr/local/bin && rm minikube && \\
 #             sudo -E minikube start --vm-driver=none --kubernetes-version=v1.13.0 --extra-config=apiserver.enable-admission-plugins=\"LimitRanger,NamespaceExists,NamespaceLifecycle,ResourceQuota,ServiceAccount,DefaultStorageClass,MutatingAdmissionWebhook\" --cpus 2 --memory 4096 \\
 # 
