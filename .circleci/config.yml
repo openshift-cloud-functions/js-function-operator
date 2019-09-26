@@ -22,9 +22,9 @@ jobs:
     ## The first three steps in this job seem to be required in order for the
     ## circleci cli to actually work. I don't think these are really necessary
     ## for a real CI run on circleci.com
-      - run: sudo chmod -R g+r /tmp/_circleci_local_build_repo
-      - run: ls -ld /tmp/_circleci_local_build_repo
-      - run: ls -ld /go/src/github.com/openshift-cloud-functions/js-function-operator
+      # - run: sudo chmod -R g+r /tmp/_circleci_local_build_repo
+      # - run: ls -ld /tmp/_circleci_local_build_repo
+      # - run: ls -ld /go/src/github.com/openshift-cloud-functions/js-function-operator
       - checkout
       - kube-orb/install-kubectl
       - kube-orb/install-kubeconfig
