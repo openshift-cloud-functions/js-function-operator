@@ -18,7 +18,7 @@ spec:
     command: ["/ko-app/kn"]
     args:
       - service
-      - update 
+      - update
       - ${inputs.params.FUNCTION_NAME}
       - --image=${outputs.resources.image.url}
 ---
@@ -40,22 +40,12 @@ spec:
     - name: image
       type: image
   steps:
-  - name: copy-source
-    image: docker.io/alpine
-    command: ['cp', '-fpv', '/fn-source/index.js', '/fn-source/package.json', '/home/node/usr/']
-    volumeMounts:
-    - name: sourcedir
-      mountPath: /fn-source
-    - name: gen-source
-      mountPath: /home/node/usr
-    securityContext:
-      privileged: true
   - name: generate
     image: quay.io/openshift-pipeline/s2i
     workingdir:  '/home/node/usr'
     command: ['s2i', 'build', '.', 'docker.io/oscf/js-runtime:0.0.1', '--as-dockerfile', '/home/node/build/Dockerfile.gen']
     volumeMounts:
-    - name: gen-source
+    - name: sourcedir
       mountPath: /home/node/usr
     - name: buildpath
       mountPath: /home/node/build
@@ -106,7 +96,7 @@ spec:
     default: user-function
   tasks:
   - name: build-runtime
-    taskRef: 
+    taskRef:
       name: js-function-build-runtime
     resources:
       outputs:
@@ -116,7 +106,7 @@ spec:
     - name: FUNCTION_NAME
       value: ${params.FUNCTION_NAME}
   - name: update-service
-    taskRef: 
+    taskRef:
       name: js-function-update-service
     resources:
       outputs:
@@ -125,5 +115,5 @@ spec:
     params:
     - name: FUNCTION_NAME
       value: ${params.FUNCTION_NAME}
-    runAfter: 
+    runAfter:
     - build-runtime

@@ -1,0 +1,99 @@
+# Orb 'circleci/kubernetes@0.7.0' resolved to 'circleci/kubernetes@0.7.0'
+version: 2
+jobs:
+  build:
+    docker:
+    - image: circleci/golang:1.13.1
+    working_directory: /go/src/github.com/openshift-cloud-functions/js-function-operator
+    steps:
+    - run:
+        command: sudo chmod -R 777 /tmp/_circleci_local_build_repo
+    - run:
+        command: ls -ld /tmp/_circleci_local_build_repo
+    - run:
+        command: ls -ld /go/src/github.com/openshift-cloud-functions/js-function-operator
+    - checkout
+    - run:
+        command: |
+          if [[ latest == "latest" ]]; then
+            # get latest kubectl release
+            KUBECTL_VERSION=$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)
+          else
+            KUBECTL_VERSION=latest
+          fi
+
+          PLATFORM="linux"
+          if [ -n "$(uname | grep "Darwin")" ]; then
+            PLATFORM="darwin"
+          fi
+
+          # download kubectl
+          curl -LO https://storage.googleapis.com/kubernetes-release/release/$KUBECTL_VERSION/bin/$PLATFORM/amd64/kubectl
+
+          [ -w /usr/local/bin ] && SUDO="" || SUDO=sudo
+
+          $SUDO chmod +x ./kubectl
+
+          $SUDO mv ./kubectl /usr/local/bin
+        name: Install kubectl
+    - run:
+        command: |
+          if [ -n "${KUBECONFIG}" ]; then
+            mkdir -p $HOME/.kube
+            echo -n "${KUBECONFIG}" | base64 --decode > $HOME/.kube/config
+          fi
+        name: Install kubeconfig
+    - run:
+        command: curl -Lo minikube && \ https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+          && chmod +x minikube && \ sudo cp minikube /usr/local/bin && rm minikube
+          && \ sudo -E minikube start --vm-driver=none --kubernetes-version=v1.13.0
+          --extra-config=apiserver.enable-admission-plugins="LimitRanger,NamespaceExists,NamespaceLifecycle,ResourceQuota,ServiceAccount,DefaultStorageClass,MutatingAdmissionWebhook"
+          --cpus 2 --memory 4096 \
+    - run:
+        command: dep install -v
+    - run:
+        command: test/run_e2e.sh
+workflows:
+  version: 2
+  workflow:
+    jobs:
+    - build
+
+# Original config.yml file:
+# # Golang CircleCI 2.0 configuration file
+# #
+# # Check https://circleci.com/docs/2.0/language-go/ for more details
+# version: 2.1
+# jobs:
+#   build:
+#     docker:
+#       # specify the version
+#       - image: circleci/golang:1.13.1
+# 
+#       # Specify service dependencies here if necessary
+#       # CircleCI maintains a library of pre-built images
+#       # documented at https://circleci.com/docs/2.0/circleci-images/
+#       # - image: circleci/postgres:9.4
+# 
+#     #### TEMPLATE_NOTE: go expects specific checkout path representing url
+#     #### expecting it in the form of
+#     ####   /go/src/github.com/circleci/go-tool
+#     ####   /go/src/bitbucket.org/circleci/go-tool
+#     working_directory: /go/src/github.com/openshift-cloud-functions/js-function-operator
+#     steps:
+#       - run: sudo chmod -R 777 /tmp/_circleci_local_build_repo
+#       - run: ls -ld /tmp/_circleci_local_build_repo
+#       - run: ls -ld /go/src/github.com/openshift-cloud-functions/js-function-operator
+#       - checkout
+#       - kube-orb/install-kubectl
+#       - kube-orb/install-kubeconfig
+#       - run: curl -Lo minikube && \\
+#             https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64 && chmod +x minikube && \\
+#             sudo cp minikube /usr/local/bin && rm minikube && \\
+#             sudo -E minikube start --vm-driver=none --kubernetes-version=v1.13.0 --extra-config=apiserver.enable-admission-plugins=\"LimitRanger,NamespaceExists,NamespaceLifecycle,ResourceQuota,ServiceAccount,DefaultStorageClass,MutatingAdmissionWebhook\" --cpus 2 --memory 4096 \\
+# 
+#       # specify any bash command here prefixed with `run: `
+#       - run: dep install -v
+#       - run: test/run_e2e.sh
+# orbs:
+#   kube-orb: circleci/kubernetes@0.7.0
