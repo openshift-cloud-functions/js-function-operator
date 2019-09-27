@@ -12,8 +12,8 @@ kubectl create -f deploy/role_binding.yaml --namespace $NS
 kubectl create -f deploy/build/js-function-build.yaml --namespace $NS
 kubectl create -f deploy/operator.yaml --namespace $NS
 
-oc adm policy add-role-to-user edit -z js-function-operator --namespace $NS
-oc adm policy add-scc-to-user privileged -z js-function-operator --namespace $NS
+# oc adm policy add-role-to-user edit -z js-function-operator --namespace $NS
+# oc adm policy add-scc-to-user privileged -z js-function-operator --namespace $NS
 
 operator-sdk test local ./test/e2e --namespace $NS --no-setup --verbose
 

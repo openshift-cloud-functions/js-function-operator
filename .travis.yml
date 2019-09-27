@@ -10,6 +10,8 @@ env:
     - KUBECONFIG=$HOME/.kube/config
 
 before_script:
+# dep
+- curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
 # kubectl
 - curl -Lo kubectl https://storage.googleapis.com/kubernetes-release/release/v1.13.0/bin/linux/amd64/kubectl && chmod +x kubectl && sudo mv kubectl /usr/local/bin/
 # minikube
