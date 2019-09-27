@@ -25,6 +25,7 @@ jobs:
       # - run: sudo chmod -R g+r /tmp/_circleci_local_build_repo
       # - run: ls -ld /tmp/_circleci_local_build_repo
       # - run: ls -ld /go/src/github.com/openshift-cloud-functions/js-function-operator
+      - setup_remote_docker
       - checkout
       - kube-orb/install-kubectl
       - kube-orb/install-kubeconfig
