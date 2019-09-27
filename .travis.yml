@@ -20,6 +20,5 @@ before_script:
 - "sudo chown -R travis: /home/travis/.minikube/"
 
 script:
-- dep ensure -v
 - kubectl cluster-info
-- test/e2e-travis.sh
+- test/run_e2e.sh

@@ -1,6 +1,8 @@
 #!/bin/bash
 NS=jsfunction-test
 
+dep ensure -v
+
 kubectl create namespace $NS
 kubectl create -f deploy/crds/faas_v1alpha1_jsfunction_crd.yaml
 kubectl create -f deploy/crds/faas_v1alpha1_jsfunctionbuild_crd.yaml
