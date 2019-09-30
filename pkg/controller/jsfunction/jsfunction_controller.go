@@ -178,6 +178,7 @@ func (r *ReconcileJSFunction) Reconcile(request reconcile.Request) (reconcile.Re
 		// No service for this function exists. Create a new one
 		service, err := r.serviceForFunction(function, jsFunctionBuild.Spec.Image)
 		if err != nil {
+			reqLogger.Error(err, "Error creating a new knative Service", "Service.Namespace", service.Namespace, "Service.Name", service.Name)
 			return reconcile.Result{}, err
 		}
 

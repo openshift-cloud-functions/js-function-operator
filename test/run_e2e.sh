@@ -1,5 +1,5 @@
 #!/bin/bash
-NS=jsfunction-test
+NS=jsfunction-operator-test
 
 kubectl create namespace $NS
 kubectl create -f deploy/crds/faas_v1alpha1_jsfunction_crd.yaml
