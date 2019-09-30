@@ -3,14 +3,14 @@
 
 This project provides a Kubernetes Operator for managing a `JSFunction`
 custom resource. A `JSFunction` accepts a JavaScript function inline,
-as well as an optional inline pakcage.json.
+as well as an optional inline package.json.
 
 When a `JSFunction` resource is applied to a cluster,
 the controller takes the following steps during reconciliation.
 
 * Check to see if a Knative `Service` for this function exists. If not, create one.
 * Create a `ConfigMap` containing with the user supplied data (index.js/package.json)
-* Create a `TaskRun`, installing any dependencies and building a runtime image using [`lanceball/js-runtime`](https://github.com/openshift-cloud-functions/faas-js-runtime-image)
+* Create a `TaskRun`, installing any dependencies and building a runtime image using [`openshift-cloud-functions/faas-js-runtime-image`](https://github.com/openshift-cloud-functions/faas-js-runtime-image)
 * Create a `PodSpec` for the `Service` specifying the runtime image just created
 * Wires up knative eventing, if `events` is set to `true` in a `JSFunction` custom resource. 
 Knative Eventing objects `Subscription` and `Channel` are created and acts as a sink for the function.
