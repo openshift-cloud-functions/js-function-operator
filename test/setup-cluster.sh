@@ -1,5 +1,7 @@
 #!/bin/sh
 
+set -x
+
 # This script will set up a minikube cluster with knative serving and eventing
 # as well as tekton pipelines.
 
@@ -11,6 +13,7 @@ minikube start --memory=8192 --cpus=6 \
   --disk-size=30g \
   --extra-config=apiserver.enable-admission-plugins="LimitRanger,NamespaceExists,NamespaceLifecycle,ResourceQuota,ServiceAccount,DefaultStorageClass,MutatingAdmissionWebhook"
 
+echo "Installing helm tiller"
 helm init
 
 # Install Istio
@@ -21,7 +24,7 @@ cd istio-${ISTIO_VERSION}
 
 for i in install/kubernetes/helm/istio-init/files/crd*yaml; do kubectl apply -f $i; done
 
-echo "Waiting for CRDs to be comitted"
+echo "Waiting for CRDs to be committed"
 sleep 7
 
 cat <<EOF | kubectl apply -f -
@@ -66,14 +69,22 @@ kubectl apply -f istio-lean.yaml
 kubectl get pods --namespace istio-system
 
 # Install Knative
+echo "Preparing to knative installation"
 kubectl apply --selector knative.dev/crd-install=true \
-  --filename https://github.com/knative/serving/releases/download/v0.9.0/serving.yaml \
-  --filename https://github.com/knative/eventing/releases/download/v0.9.0/release.yaml \
-  --filename https://github.com/knative/serving/releases/download/v0.9.0/monitoring.yaml
+  --filename https://github.com/knative/serving/releases/download/v0.8.0/serving.yaml \
+  --filename https://github.com/knative/eventing/releases/download/v0.8.0/release.yaml \
+  --filename https://github.com/knative/serving/releases/download/v0.8.0/monitoring.yaml
 
-kubectl apply --filename https://github.com/knative/serving/releases/download/v0.9.0/serving.yaml \
-  --filename https://github.com/knative/eventing/releases/download/v0.9.0/release.yaml \
-  --filename https://github.com/knative/serving/releases/download/v0.9.0/monitoring.yaml
+# Apparently there is a known race condition on install, so just to be safe do this again
+kubectl apply --selector knative.dev/crd-install=true \
+  --filename https://github.com/knative/serving/releases/download/v0.8.0/serving.yaml
+
+echo "Applying knative resources"
+kubectl apply --filename https://github.com/knative/serving/releases/download/v0.8.0/serving.yaml \
+  --filename https://github.com/knative/eventing/releases/download/v0.8.0/release.yaml \
+  --filename https://github.com/knative/serving/releases/download/v0.8.0/monitoring.yaml
+
+# Apparently there is a known race condition on install, so just to be safe do this again
 
 
 # Install Tekton
@@ -89,4 +100,11 @@ kubectl apply -f deploy/service_account.yaml
 kubectl apply -f deploy/build/js-function-build.yaml
 kubectl apply -f deploy/operator.yaml
 
-kubectl get namespaces
+kubectl get pods -n istio-system
+kubectl get pods -n tekton-pipelines
+kubectl get pods -n knative-monitoring
+kubectl get pods -n knative-eventing
+kubectl get pods -n knative-serving
+kubectl get pods -n default
+
+echo "Cluster set up complete. Wait for up to 10 minutes for the cluster to be fully functional."
