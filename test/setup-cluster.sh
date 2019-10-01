@@ -1,13 +1,32 @@
 #!/bin/sh
 
-set -x
+# This script will set up a minikube cluster with kn serving, kn eventing,
+# kn monitoring, tekton pipelines, istio, and helm. It requires a significant
+# amount of system resources and runs minikube with 20g ram, 6 cpus, and
+# 30g disk.
+#
+# The script assumes that you have minikube and helm installed, and will create
+# a jsfunction-operator-test profile within minikube for testing. It does not
+# modify in any way any other minikube profiles. When you are finished, you can
+# delete this profile with the following commands.
+#
+# minikube stop -p jsfunction-operator-test
+# minikube delete -p jsfunction-operator-test
+#
+# Once the script completes, it will take up to 30 minutes for the cluster to
+# be fully stabilized.
 
-# This script will set up a minikube cluster with knative serving and eventing
-# as well as tekton pipelines.
+echo "This script creates a kubernetes cluster using minikube with the profile jsfunction-operator-test."
+echo "To continue, type 'y'. Any other input will stop execution if this script."
+read CONT
+
+if [ "y" != "$CONT" ] ; then exit 1 ; fi
+
+set -x
 
 minikube status
 
-minikube start --memory=8192 --cpus=6 \
+minikube start -p jsfunction-operator-test --memory=20g --cpus=6 \
   --kubernetes-version=v1.12.0 \
   --vm-driver=kvm2 \
   --disk-size=30g \
@@ -22,11 +41,6 @@ echo "Installing ${ISTIO_VERSION}"
 curl -L https://git.io/getLatestIstio | sh -
 cd istio-${ISTIO_VERSION}
 
-for i in install/kubernetes/helm/istio-init/files/crd*yaml; do kubectl apply -f $i; done
-
-echo "Waiting for CRDs to be committed"
-sleep 7
-
 cat <<EOF | kubectl apply -f -
 apiVersion: v1
 kind: Namespace
@@ -35,6 +49,9 @@ metadata:
   labels:
     istio-injection: disabled
 EOF
+
+for i in install/kubernetes/helm/istio-init/files/crd*yaml; do kubectl apply -f $i; done
+sleep 5
 
 # A lighter template, with just pilot/gateway.
 # Based on install/kubernetes/helm/istio/values-istio-minimal.yaml
@@ -66,10 +83,12 @@ helm template --namespace=istio-system \
 
 kubectl apply -f istio-lean.yaml
 
+echo "Waiting for 1 minute for Istio system to initialize"
+sleep 60
 kubectl get pods --namespace istio-system
 
 # Install Knative
-echo "Preparing to knative installation"
+echo "Preparing the knative installation"
 kubectl apply --selector knative.dev/crd-install=true \
   --filename https://github.com/knative/serving/releases/download/v0.8.0/serving.yaml \
   --filename https://github.com/knative/eventing/releases/download/v0.8.0/release.yaml \
@@ -77,18 +96,29 @@ kubectl apply --selector knative.dev/crd-install=true \
 
 # Apparently there is a known race condition on install, so just to be safe do this again
 kubectl apply --selector knative.dev/crd-install=true \
-  --filename https://github.com/knative/serving/releases/download/v0.8.0/serving.yaml
+  --filename https://github.com/knative/serving/releases/download/v0.8.0/serving.yaml \
+  --filename https://github.com/knative/eventing/releases/download/v0.8.0/release.yaml \
+  --filename https://github.com/knative/serving/releases/download/v0.8.0/monitoring.yaml
 
 echo "Applying knative resources"
 kubectl apply --filename https://github.com/knative/serving/releases/download/v0.8.0/serving.yaml \
   --filename https://github.com/knative/eventing/releases/download/v0.8.0/release.yaml \
   --filename https://github.com/knative/serving/releases/download/v0.8.0/monitoring.yaml
 
-# Apparently there is a known race condition on install, so just to be safe do this again
+echo "Waiting for 1 minute for Knative system to initialize"
+sleep 60
+kubectl get pods -n knative-monitoring
+kubectl get pods -n knative-eventing
+kubectl get pods -n knative-serving
 
 
 # Install Tekton
-kubectl apply --filename https://storage.googleapis.com/tekton-releases/latest/release.yaml
+kubectl apply --filename https://github.com/tektoncd/pipeline/releases/download/v0.5.2/release.yaml
+
+echo "Waiting for 1 minute for Tekton system to initialize"
+sleep 60
+kubectl get pods -n tekton-pipelines
+
 
 # Install FaaS
 cd ..
