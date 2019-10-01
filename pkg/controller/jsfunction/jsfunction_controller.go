@@ -322,6 +322,20 @@ func (r *ReconcileJSFunction) serviceForFunction(f *faasv1alpha1.JSFunction, ima
 									Ports: []corev1.ContainerPort{{
 										ContainerPort: 8080,
 									}},
+									ReadinessProbe: &corev1.Probe{
+										Handler: corev1.Handler{
+											HTTPGet: &corev1.HTTPGetAction{
+												Path: "/health",
+											},
+										},
+									},
+									LivenessProbe: &corev1.Probe{
+										Handler: corev1.Handler{
+											HTTPGet: &corev1.HTTPGetAction{
+												Path: "/health",
+											},
+										},
+									},
 								}},
 							},
 						},

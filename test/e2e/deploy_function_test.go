@@ -48,4 +48,7 @@ func TestDeployFunction(t *testing.T) {
 
 	test.AssertGetRequest(t, serviceURL.String(), 200, []byte("ok"))
 
+	// Test health and readiness URLs
+	test.AssertGetRequest(t, serviceURL.String()+"/health", 200, []byte("OK"))
+
 }
