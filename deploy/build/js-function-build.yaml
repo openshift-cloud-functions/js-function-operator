@@ -54,7 +54,7 @@ spec:
   - name: build
     image: quay.io/buildah/stable
     workingdir: /home/node/build
-    command: ['buildah', 'bud', '--tls-verify=${inputs.params.TLSVERIFY}', '--layers', '-f', '/Dockerfile.gen', '-t', '${outputs.resources.image.url}', '.']
+    command: ['buildah', 'bud', '--tls-verify=${inputs.params.TLSVERIFY}', '--layers', '-f', '/home/node/build/Dockerfile.gen', '-t', '${outputs.resources.image.url}', '.']
     volumeMounts:
     - name: varlibcontainers
       mountPath: /var/lib/containers
