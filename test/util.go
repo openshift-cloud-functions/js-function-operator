@@ -43,7 +43,7 @@ func AssertGetRequest(t *testing.T, url string, expectedStatusCode int, expected
 		return
 	}
 
-	assert.Equal(t, expectedBody, b)
+	assert.Equal(t, string(expectedBody), string(b))
 }
 
 // WaitForKnativeServiceReadyDefault waits for a Knative service to become
